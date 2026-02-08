@@ -1,11 +1,11 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("@nomicfoundation/hardhat-verify");
+require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.19",
     settings: {
       optimizer: {
         enabled: true,
@@ -17,12 +17,12 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.SEPOLIA_RPC_URL || "",
-        enabled: process.env.FORKING === "true",
+        enabled: false,
       },
     },
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       chainId: 11155111,
     },
   },
@@ -37,7 +37,9 @@ module.exports = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
-  mocha: {
-    timeout: 40000,
+  gasReporter: {
+    enabled: process.env.REPORT_GAS === "true",
+    currency: "USD",
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
   },
 };

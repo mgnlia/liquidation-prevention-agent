@@ -1,132 +1,202 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-/**
- * @title IComet
- * @notice Minimal interface for Compound V3 (Comet)
- */
-interface IComet {
-    function borrowBalanceOf(address account) external view returns (uint256);
-    function collateralBalanceOf(address account, address asset) external view returns (uint128);
-    function isLiquidatable(address account) external view returns (bool);
-    function getAssetInfo(uint8 i) external view returns (AssetInfo memory);
-    function numAssets() external view returns (uint8);
-    
-    struct AssetInfo {
-        uint8 offset;
-        address asset;
-        address priceFeed;
-        uint64 scale;
-        uint64 borrowCollateralFactor;
-        uint64 liquidateCollateralFactor;
-        uint64 liquidationFactor;
-        uint128 supplyCap;
-    }
-}
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../interfaces/ICompoundV3.sol";
 
 /**
  * @title CompoundV3Adapter
- * @notice Adapter for monitoring Compound V3 (Comet) positions
- * @dev Integrates with Compound V3 to track collateral and debt
+ * @notice Adapter contract for monitoring and interacting with Compound V3 (Comet) positions
+ * @dev Provides liquidation risk monitoring for the AI agent
  */
-contract CompoundV3Adapter is Ownable {
-    IComet public immutable comet;
-    
-    // Liquidation threshold (similar to health factor concept)
-    uint256 public constant LIQUIDATION_THRESHOLD = 150; // 150% = 1.5x collateralization
+contract CompoundV3Adapter is Ownable, ReentrancyGuard {
+    ICompoundV3 public immutable comet;
     
     // Events
-    event PositionMonitored(address indexed user, uint256 borrowBalance, uint256 timestamp);
-    event LiquidationRiskDetected(address indexed user, uint256 borrowBalance);
+    event PositionMonitored(
+        address indexed user,
+        int104 principal,
+        uint256 borrowBalance,
+        bool isLiquidatable,
+        uint256 timestamp
+    );
     
-    constructor(address _comet) Ownable(msg.sender) {
-        require(_comet != address(0), "Invalid Comet address");
-        comet = IComet(_comet);
-    }
-    
+    event RiskDetected(
+        address indexed user,
+        uint256 borrowBalance,
+        uint256 timestamp
+    );
+
     /**
-     * @notice Get user's borrow balance
-     * @param user Address of the user
-     * @return borrowBalance Amount borrowed
+     * @notice Constructor
+     * @param _comet Address of Compound V3 (Comet) contract
      */
-    function getBorrowBalance(address user) external view returns (uint256 borrowBalance) {
-        return comet.borrowBalanceOf(user);
+    constructor(address _comet) {
+        require(_comet != address(0), "Invalid Comet address");
+        comet = ICompoundV3(_comet);
     }
-    
+
+    /**
+     * @notice Get user's basic position data
+     * @param user Address of the user
+     * @return principal User's principal balance (negative = borrowed)
+     * @return baseTrackingIndex Tracking index for interest
+     * @return baseTrackingAccrued Accrued interest
+     */
+    function getUserBasic(address user)
+        external
+        view
+        returns (
+            int104 principal,
+            uint64 baseTrackingIndex,
+            uint64 baseTrackingAccrued
+        )
+    {
+        ICompoundV3.UserBasic memory basic = comet.userBasic(user);
+        return (basic.principal, basic.baseTrackingIndex, basic.baseTrackingAccrued);
+    }
+
     /**
      * @notice Get user's collateral balance for a specific asset
      * @param user Address of the user
      * @param asset Address of the collateral asset
-     * @return collateralBalance Amount of collateral
+     * @return balance Collateral balance
      */
-    function getCollateralBalance(address user, address asset) external view returns (uint128 collateralBalance) {
-        return comet.collateralBalanceOf(user, asset);
+    function getUserCollateral(address user, address asset)
+        external
+        view
+        returns (uint128 balance)
+    {
+        ICompoundV3.UserCollateral memory collateral = comet.userCollateral(user, asset);
+        return collateral.balance;
     }
-    
+
     /**
      * @notice Check if user's position is liquidatable
      * @param user Address of the user
      * @return isLiquidatable True if position can be liquidated
      */
-    function isPositionLiquidatable(address user) external view returns (bool) {
+    function isPositionLiquidatable(address user)
+        external
+        view
+        returns (bool isLiquidatable)
+    {
         return comet.isLiquidatable(user);
     }
-    
+
+    /**
+     * @notice Get user's borrow balance
+     * @param user Address of the user
+     * @return borrowBalance Current borrow balance
+     */
+    function getBorrowBalance(address user)
+        external
+        view
+        returns (uint256 borrowBalance)
+    {
+        return comet.borrowBalanceOf(user);
+    }
+
     /**
      * @notice Check if user's position is at risk
      * @param user Address of the user
-     * @return isAtRisk True if position is at risk or liquidatable
+     * @return isAtRisk True if position is liquidatable or close to it
+     * @return borrowBalance Current borrow balance
      */
-    function isPositionAtRisk(address user) external view returns (bool isAtRisk) {
-        return comet.isLiquidatable(user);
+    function isPositionAtRisk(address user)
+        external
+        view
+        returns (bool isAtRisk, uint256 borrowBalance)
+    {
+        isAtRisk = comet.isLiquidatable(user);
+        borrowBalance = comet.borrowBalanceOf(user);
+        return (isAtRisk, borrowBalance);
     }
-    
+
     /**
-     * @notice Monitor position and emit events
-     * @param user Address of the user
+     * @notice Monitor user position and emit events for off-chain indexing
+     * @param user Address of the user to monitor
      */
     function monitorPosition(address user) external {
+        ICompoundV3.UserBasic memory basic = comet.userBasic(user);
         uint256 borrowBalance = comet.borrowBalanceOf(user);
-        bool liquidatable = comet.isLiquidatable(user);
-        
-        emit PositionMonitored(user, borrowBalance, block.timestamp);
-        
-        if (liquidatable) {
-            emit LiquidationRiskDetected(user, borrowBalance);
+        bool isLiquidatable = comet.isLiquidatable(user);
+
+        emit PositionMonitored(
+            user,
+            basic.principal,
+            borrowBalance,
+            isLiquidatable,
+            block.timestamp
+        );
+
+        if (isLiquidatable) {
+            emit RiskDetected(user, borrowBalance, block.timestamp);
         }
     }
-    
+
     /**
-     * @notice Batch monitor multiple positions
+     * @notice Batch monitor multiple user positions
      * @param users Array of user addresses to monitor
      */
-    function monitorPositionsBatch(address[] calldata users) external {
+    function monitorPositions(address[] calldata users) external {
         for (uint256 i = 0; i < users.length; i++) {
+            ICompoundV3.UserBasic memory basic = comet.userBasic(users[i]);
             uint256 borrowBalance = comet.borrowBalanceOf(users[i]);
-            bool liquidatable = comet.isLiquidatable(users[i]);
-            
-            emit PositionMonitored(users[i], borrowBalance, block.timestamp);
-            
-            if (liquidatable) {
-                emit LiquidationRiskDetected(users[i], borrowBalance);
+            bool isLiquidatable = comet.isLiquidatable(users[i]);
+
+            emit PositionMonitored(
+                users[i],
+                basic.principal,
+                borrowBalance,
+                isLiquidatable,
+                block.timestamp
+            );
+
+            if (isLiquidatable) {
+                emit RiskDetected(users[i], borrowBalance, block.timestamp);
             }
         }
     }
-    
+
     /**
-     * @notice Get all asset info from Comet
-     * @return assets Array of asset information
+     * @notice Get all collateral assets for monitoring
+     * @return assets Array of collateral asset addresses
      */
-    function getAllAssets() external view returns (IComet.AssetInfo[] memory assets) {
+    function getCollateralAssets() external view returns (address[] memory assets) {
         uint8 numAssets = comet.numAssets();
-        assets = new IComet.AssetInfo[](numAssets);
+        assets = new address[](numAssets);
         
         for (uint8 i = 0; i < numAssets; i++) {
-            assets[i] = comet.getAssetInfo(i);
+            ICompoundV3.AssetInfo memory assetInfo = comet.getAssetInfo(i);
+            assets[i] = assetInfo.asset;
         }
         
         return assets;
+    }
+
+    /**
+     * @notice Get detailed asset info
+     * @param index Asset index
+     * @return asset Asset address
+     * @return borrowCollateralFactor Borrow collateral factor
+     * @return liquidateCollateralFactor Liquidation collateral factor
+     */
+    function getAssetInfo(uint8 index)
+        external
+        view
+        returns (
+            address asset,
+            uint64 borrowCollateralFactor,
+            uint64 liquidateCollateralFactor
+        )
+    {
+        ICompoundV3.AssetInfo memory assetInfo = comet.getAssetInfo(index);
+        return (
+            assetInfo.asset,
+            assetInfo.borrowCollateralFactor,
+            assetInfo.liquidateCollateralFactor
+        );
     }
 }

@@ -1,233 +1,295 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./adapters/AaveV3Adapter.sol";
 import "./adapters/CompoundV3Adapter.sol";
 import "./FlashLoanRebalancer.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title LiquidationPrevention
  * @notice Main orchestrator contract for AI-powered liquidation prevention
- * @dev Coordinates monitoring, risk analysis, and automated rebalancing
+ * @dev Manages user registrations, monitoring, and coordinates rebalancing actions
  */
-contract LiquidationPrevention is Ownable, ReentrancyGuard {
-    // Protocol adapters
-    AaveV3Adapter public aaveAdapter;
-    CompoundV3Adapter public compoundAdapter;
-    FlashLoanRebalancer public rebalancer;
+contract LiquidationPrevention is AccessControl, Pausable, ReentrancyGuard {
+    bytes32 public constant AGENT_ROLE = keccak256("AGENT_ROLE");
+    bytes32 public constant MONITOR_ROLE = keccak256("MONITOR_ROLE");
     
-    // AI agent address
-    address public aiAgent;
+    AaveV3Adapter public immutable aaveAdapter;
+    CompoundV3Adapter public immutable compoundAdapter;
+    FlashLoanRebalancer public immutable rebalancer;
     
-    // User registration
-    mapping(address => bool) public registeredUsers;
-    mapping(address => Protocol[]) public userProtocols;
-    
-    enum Protocol {
-        AAVE_V3,
-        COMPOUND_V3
+    // User registration tracking
+    struct UserConfig {
+        bool isRegistered;
+        bool monitorAave;
+        bool monitorCompound;
+        uint256 minHealthFactor; // Minimum acceptable health factor (18 decimals)
+        uint256 registeredAt;
+        uint256 lastMonitored;
     }
+    
+    mapping(address => UserConfig) public userConfigs;
+    address[] public registeredUsers;
+    
+    // Monitoring statistics
+    struct MonitoringStats {
+        uint256 totalMonitored;
+        uint256 risksDetected;
+        uint256 rebalancesExecuted;
+        uint256 liquidationsPrevented;
+    }
+    
+    MonitoringStats public stats;
     
     // Events
-    event UserRegistered(address indexed user, Protocol[] protocols);
-    event UserUnregistered(address indexed user);
-    event PositionMonitored(address indexed user, Protocol protocol, uint256 timestamp);
-    event RebalanceTriggered(address indexed user, Protocol protocol, uint256 timestamp);
-    event AIAgentUpdated(address indexed oldAgent, address indexed newAgent);
+    event UserRegistered(
+        address indexed user,
+        bool monitorAave,
+        bool monitorCompound,
+        uint256 minHealthFactor,
+        uint256 timestamp
+    );
     
-    // Errors
-    error UnauthorizedAgent();
-    error UserNotRegistered();
-    error UserAlreadyRegistered();
+    event UserUnregistered(address indexed user, uint256 timestamp);
     
-    modifier onlyAIAgent() {
-        if (msg.sender != aiAgent && msg.sender != owner()) {
-            revert UnauthorizedAgent();
-        }
-        _;
-    }
+    event UserConfigUpdated(
+        address indexed user,
+        bool monitorAave,
+        bool monitorCompound,
+        uint256 minHealthFactor,
+        uint256 timestamp
+    );
     
+    event MonitoringExecuted(
+        address indexed user,
+        string protocol,
+        bool riskDetected,
+        uint256 timestamp
+    );
+    
+    event RebalanceRequested(
+        address indexed user,
+        string protocol,
+        uint256 healthFactor,
+        uint256 timestamp
+    );
+
+    /**
+     * @notice Constructor
+     * @param _aaveAdapter AaveV3Adapter contract address
+     * @param _compoundAdapter CompoundV3Adapter contract address
+     * @param _rebalancer FlashLoanRebalancer contract address
+     */
     constructor(
         address _aaveAdapter,
         address _compoundAdapter,
-        address _rebalancer,
-        address _aiAgent
-    ) Ownable(msg.sender) {
+        address _rebalancer
+    ) {
         require(_aaveAdapter != address(0), "Invalid Aave adapter");
         require(_compoundAdapter != address(0), "Invalid Compound adapter");
         require(_rebalancer != address(0), "Invalid rebalancer");
-        require(_aiAgent != address(0), "Invalid AI agent");
         
         aaveAdapter = AaveV3Adapter(_aaveAdapter);
         compoundAdapter = CompoundV3Adapter(_compoundAdapter);
         rebalancer = FlashLoanRebalancer(_rebalancer);
-        aiAgent = _aiAgent;
+        
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(AGENT_ROLE, msg.sender);
+        _grantRole(MONITOR_ROLE, msg.sender);
     }
-    
+
     /**
-     * @notice Register user for monitoring
-     * @param protocols Array of protocols to monitor
+     * @notice Register user for liquidation prevention monitoring
+     * @param monitorAave Enable Aave position monitoring
+     * @param monitorCompound Enable Compound position monitoring
+     * @param minHealthFactor Minimum acceptable health factor (18 decimals, e.g., 1.5e18 = 1.5)
      */
-    function registerUser(Protocol[] calldata protocols) external {
-        if (registeredUsers[msg.sender]) {
-            revert UserAlreadyRegistered();
-        }
+    function registerUser(
+        bool monitorAave,
+        bool monitorCompound,
+        uint256 minHealthFactor
+    ) external whenNotPaused {
+        require(!userConfigs[msg.sender].isRegistered, "Already registered");
+        require(monitorAave || monitorCompound, "Must monitor at least one protocol");
+        require(minHealthFactor >= 1.2e18, "Min health factor too low");
+        require(minHealthFactor <= 3e18, "Min health factor too high");
         
-        registeredUsers[msg.sender] = true;
+        userConfigs[msg.sender] = UserConfig({
+            isRegistered: true,
+            monitorAave: monitorAave,
+            monitorCompound: monitorCompound,
+            minHealthFactor: minHealthFactor,
+            registeredAt: block.timestamp,
+            lastMonitored: 0
+        });
         
-        for (uint256 i = 0; i < protocols.length; i++) {
-            userProtocols[msg.sender].push(protocols[i]);
-        }
+        registeredUsers.push(msg.sender);
         
-        emit UserRegistered(msg.sender, protocols);
+        emit UserRegistered(
+            msg.sender,
+            monitorAave,
+            monitorCompound,
+            minHealthFactor,
+            block.timestamp
+        );
     }
-    
+
     /**
      * @notice Unregister user from monitoring
      */
     function unregisterUser() external {
-        if (!registeredUsers[msg.sender]) {
-            revert UserNotRegistered();
-        }
+        require(userConfigs[msg.sender].isRegistered, "Not registered");
         
-        registeredUsers[msg.sender] = false;
-        delete userProtocols[msg.sender];
+        userConfigs[msg.sender].isRegistered = false;
         
-        emit UserUnregistered(msg.sender);
+        emit UserUnregistered(msg.sender, block.timestamp);
     }
-    
+
     /**
-     * @notice Get user's registration status
-     * @param user User address
-     * @return isRegistered Registration status
-     * @return protocols Monitored protocols
+     * @notice Update user monitoring configuration
+     * @param monitorAave Enable/disable Aave monitoring
+     * @param monitorCompound Enable/disable Compound monitoring
+     * @param minHealthFactor New minimum health factor
      */
-    function getUserInfo(address user) external view returns (bool isRegistered, Protocol[] memory protocols) {
-        return (registeredUsers[user], userProtocols[user]);
+    function updateUserConfig(
+        bool monitorAave,
+        bool monitorCompound,
+        uint256 minHealthFactor
+    ) external {
+        require(userConfigs[msg.sender].isRegistered, "Not registered");
+        require(monitorAave || monitorCompound, "Must monitor at least one protocol");
+        require(minHealthFactor >= 1.2e18, "Min health factor too low");
+        require(minHealthFactor <= 3e18, "Min health factor too high");
+        
+        userConfigs[msg.sender].monitorAave = monitorAave;
+        userConfigs[msg.sender].monitorCompound = monitorCompound;
+        userConfigs[msg.sender].minHealthFactor = minHealthFactor;
+        
+        emit UserConfigUpdated(
+            msg.sender,
+            monitorAave,
+            monitorCompound,
+            minHealthFactor,
+            block.timestamp
+        );
     }
-    
+
     /**
-     * @notice Monitor user's position across all registered protocols
-     * @param user User address
+     * @notice Monitor a specific user's positions (called by AI agent)
+     * @param user Address of user to monitor
      */
-    function monitorUser(address user) external onlyAIAgent {
-        if (!registeredUsers[user]) {
-            revert UserNotRegistered();
-        }
+    function monitorUser(address user) external onlyRole(MONITOR_ROLE) whenNotPaused {
+        UserConfig storage config = userConfigs[user];
+        require(config.isRegistered, "User not registered");
         
-        Protocol[] memory protocols = userProtocols[user];
+        bool riskDetected = false;
         
-        for (uint256 i = 0; i < protocols.length; i++) {
-            if (protocols[i] == Protocol.AAVE_V3) {
-                aaveAdapter.monitorPosition(user);
-                emit PositionMonitored(user, Protocol.AAVE_V3, block.timestamp);
-            } else if (protocols[i] == Protocol.COMPOUND_V3) {
-                compoundAdapter.monitorPosition(user);
-                emit PositionMonitored(user, Protocol.COMPOUND_V3, block.timestamp);
+        // Monitor Aave position
+        if (config.monitorAave) {
+            (bool isAtRisk, uint256 healthFactor) = aaveAdapter.isPositionAtRisk(user);
+            
+            if (isAtRisk && healthFactor < config.minHealthFactor) {
+                riskDetected = true;
+                emit RebalanceRequested(user, "Aave", healthFactor, block.timestamp);
             }
+            
+            emit MonitoringExecuted(user, "Aave", isAtRisk, block.timestamp);
+        }
+        
+        // Monitor Compound position
+        if (config.monitorCompound) {
+            (bool isAtRisk,) = compoundAdapter.isPositionAtRisk(user);
+            
+            if (isAtRisk) {
+                riskDetected = true;
+                emit RebalanceRequested(user, "Compound", 0, block.timestamp);
+            }
+            
+            emit MonitoringExecuted(user, "Compound", isAtRisk, block.timestamp);
+        }
+        
+        config.lastMonitored = block.timestamp;
+        stats.totalMonitored++;
+        
+        if (riskDetected) {
+            stats.risksDetected++;
         }
     }
-    
+
     /**
      * @notice Batch monitor multiple users
-     * @param users Array of user addresses
+     * @param users Array of user addresses to monitor
      */
-    function monitorUsersBatch(address[] calldata users) external onlyAIAgent {
+    function monitorUsers(address[] calldata users)
+        external
+        onlyRole(MONITOR_ROLE)
+        whenNotPaused
+    {
         for (uint256 i = 0; i < users.length; i++) {
-            if (registeredUsers[users[i]]) {
-                Protocol[] memory protocols = userProtocols[users[i]];
-                
-                for (uint256 j = 0; j < protocols.length; j++) {
-                    if (protocols[j] == Protocol.AAVE_V3) {
-                        aaveAdapter.monitorPosition(users[i]);
-                        emit PositionMonitored(users[i], Protocol.AAVE_V3, block.timestamp);
-                    } else if (protocols[j] == Protocol.COMPOUND_V3) {
-                        compoundAdapter.monitorPosition(users[i]);
-                        emit PositionMonitored(users[i], Protocol.COMPOUND_V3, block.timestamp);
-                    }
-                }
+            if (userConfigs[users[i]].isRegistered) {
+                this.monitorUser(users[i]);
             }
         }
     }
-    
+
     /**
-     * @notice Get Aave health factor for user
-     * @param user User address
-     * @return healthFactor Health factor
+     * @notice Execute rebalancing for a user (called by AI agent after analysis)
+     * @param user Address of user to rebalance
+     * @param params Flash loan rebalancing parameters
      */
-    function getAaveHealthFactor(address user) external view returns (uint256 healthFactor) {
-        return aaveAdapter.getHealthFactor(user);
-    }
-    
-    /**
-     * @notice Check if Aave position is at risk
-     * @param user User address
-     * @return isAtRisk Risk status
-     * @return healthFactor Health factor
-     */
-    function isAavePositionAtRisk(address user) external view returns (bool isAtRisk, uint256 healthFactor) {
-        return aaveAdapter.isPositionAtRisk(user);
-    }
-    
-    /**
-     * @notice Check if Compound position is at risk
-     * @param user User address
-     * @return isAtRisk Risk status
-     */
-    function isCompoundPositionAtRisk(address user) external view returns (bool isAtRisk) {
-        return compoundAdapter.isPositionAtRisk(user);
-    }
-    
-    /**
-     * @notice Trigger rebalancing for user (called by AI agent)
-     * @param params Rebalancing parameters
-     */
-    function triggerRebalance(FlashLoanRebalancer.RebalanceParams calldata params) 
-        external 
-        onlyAIAgent 
-        nonReentrant 
-    {
-        if (!registeredUsers[params.user]) {
-            revert UserNotRegistered();
-        }
+    function executeRebalance(
+        address user,
+        FlashLoanRebalancer.RebalanceParams calldata params
+    ) external onlyRole(AGENT_ROLE) whenNotPaused nonReentrant {
+        require(userConfigs[user].isRegistered, "User not registered");
+        require(params.user == user, "User mismatch");
         
-        rebalancer.executeRebalance(params);
+        // Execute flash loan rebalancing
+        rebalancer.initiateRebalance(params);
         
-        emit RebalanceTriggered(params.user, Protocol.AAVE_V3, block.timestamp);
+        stats.rebalancesExecuted++;
+        stats.liquidationsPrevented++;
     }
-    
+
     /**
-     * @notice Update AI agent address
-     * @param _newAgent New AI agent address
+     * @notice Get total number of registered users
+     * @return count Number of registered users
      */
-    function setAIAgent(address _newAgent) external onlyOwner {
-        require(_newAgent != address(0), "Invalid AI agent");
-        address oldAgent = aiAgent;
-        aiAgent = _newAgent;
-        emit AIAgentUpdated(oldAgent, _newAgent);
+    function getRegisteredUsersCount() external view returns (uint256 count) {
+        return registeredUsers.length;
     }
-    
+
     /**
-     * @notice Update protocol adapters
-     * @param _aaveAdapter New Aave adapter
-     * @param _compoundAdapter New Compound adapter
+     * @notice Get user configuration
+     * @param user Address of user
+     * @return config User configuration struct
      */
-    function updateAdapters(address _aaveAdapter, address _compoundAdapter) external onlyOwner {
-        require(_aaveAdapter != address(0), "Invalid Aave adapter");
-        require(_compoundAdapter != address(0), "Invalid Compound adapter");
-        
-        aaveAdapter = AaveV3Adapter(_aaveAdapter);
-        compoundAdapter = CompoundV3Adapter(_compoundAdapter);
+    function getUserConfig(address user) external view returns (UserConfig memory config) {
+        return userConfigs[user];
     }
-    
+
     /**
-     * @notice Update rebalancer
-     * @param _rebalancer New rebalancer address
+     * @notice Get monitoring statistics
+     * @return MonitoringStats struct
      */
-    function updateRebalancer(address _rebalancer) external onlyOwner {
-        require(_rebalancer != address(0), "Invalid rebalancer");
-        rebalancer = FlashLoanRebalancer(_rebalancer);
+    function getStats() external view returns (MonitoringStats memory) {
+        return stats;
+    }
+
+    /**
+     * @notice Pause contract (emergency)
+     */
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    /**
+     * @notice Unpause contract
+     */
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
     }
 }

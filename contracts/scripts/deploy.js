@@ -1,111 +1,138 @@
 const hre = require("hardhat");
-require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
+
+// Sepolia Aave V3 addresses
+const SEPOLIA_AAVE_V3_POOL = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
+const SEPOLIA_AAVE_V3_POOL_ADDRESSES_PROVIDER = "0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A";
+const SEPOLIA_COMPOUND_V3_COMET_USDC = "0xAec1F48e02Cfb822Be958B68C7957156EB3F0b6e";
 
 async function main() {
-  console.log("🚀 Deploying Liquidation Prevention System to Sepolia...\n");
+  console.log("\n🚀 Deploying Liquidation Prevention System to", hre.network.name, "...\n");
 
   const [deployer] = await hre.ethers.getSigners();
-  console.log("Deploying contracts with account:", deployer.address);
-  console.log("Account balance:", (await hre.ethers.provider.getBalance(deployer.address)).toString(), "\n");
+  const balance = await hre.ethers.provider.getBalance(deployer.address);
 
-  // Aave V3 Sepolia addresses
-  const AAVE_POOL_ADDRESS_PROVIDER = process.env.AAVE_POOL_ADDRESS_PROVIDER || "0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A";
-  const AAVE_POOL = process.env.AAVE_POOL || "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
-  
-  // Compound V3 Sepolia (placeholder - update with actual address)
-  const COMPOUND_COMET = process.env.COMPOUND_COMET_USDC || "0x0000000000000000000000000000000000000000";
-  
-  // AI Agent address (deployer for now, update later)
-  const AI_AGENT = deployer.address;
+  console.log("📋 Deployment Configuration:");
+  console.log("   Network:", hre.network.name, `(${hre.network.config.chainId})`);
+  console.log("   Deployer:", deployer.address);
+  console.log("   Balance:", hre.ethers.formatEther(balance), "ETH\n");
 
-  // Deploy AaveV3Adapter
-  console.log("📦 Deploying AaveV3Adapter...");
+  if (balance < hre.ethers.parseEther("0.1")) {
+    console.warn("⚠️  Warning: Low balance. Deployment may fail.\n");
+  }
+
+  // Get AI agent address from env or use deployer
+  const aiAgentAddress = process.env.AI_AGENT_ADDRESS || deployer.address;
+  console.log("🤖 AI Agent Address:", aiAgentAddress, "\n");
+
+  console.log("📦 Deploying Contracts...\n");
+
+  // 1. Deploy AaveV3Adapter
+  console.log("1️⃣  Deploying AaveV3Adapter...");
   const AaveV3Adapter = await hre.ethers.getContractFactory("AaveV3Adapter");
-  const aaveAdapter = await AaveV3Adapter.deploy(AAVE_POOL);
+  const aaveAdapter = await AaveV3Adapter.deploy(
+    SEPOLIA_AAVE_V3_POOL_ADDRESSES_PROVIDER
+  );
   await aaveAdapter.waitForDeployment();
   const aaveAdapterAddress = await aaveAdapter.getAddress();
-  console.log("✅ AaveV3Adapter deployed to:", aaveAdapterAddress, "\n");
+  console.log("   ✅ AaveV3Adapter deployed to:", aaveAdapterAddress);
 
-  // Deploy CompoundV3Adapter
-  console.log("📦 Deploying CompoundV3Adapter...");
+  // 2. Deploy CompoundV3Adapter
+  console.log("\n2️⃣  Deploying CompoundV3Adapter...");
   const CompoundV3Adapter = await hre.ethers.getContractFactory("CompoundV3Adapter");
-  const compoundAdapter = await CompoundV3Adapter.deploy(COMPOUND_COMET);
+  const compoundAdapter = await CompoundV3Adapter.deploy(
+    SEPOLIA_COMPOUND_V3_COMET_USDC
+  );
   await compoundAdapter.waitForDeployment();
   const compoundAdapterAddress = await compoundAdapter.getAddress();
-  console.log("✅ CompoundV3Adapter deployed to:", compoundAdapterAddress, "\n");
+  console.log("   ✅ CompoundV3Adapter deployed to:", compoundAdapterAddress);
 
-  // Deploy FlashLoanRebalancer
-  console.log("📦 Deploying FlashLoanRebalancer...");
+  // 3. Deploy FlashLoanRebalancer
+  console.log("\n3️⃣  Deploying FlashLoanRebalancer...");
   const FlashLoanRebalancer = await hre.ethers.getContractFactory("FlashLoanRebalancer");
   const rebalancer = await FlashLoanRebalancer.deploy(
-    AAVE_POOL_ADDRESS_PROVIDER,
-    AAVE_POOL,
-    AI_AGENT
+    SEPOLIA_AAVE_V3_POOL_ADDRESSES_PROVIDER
   );
   await rebalancer.waitForDeployment();
   const rebalancerAddress = await rebalancer.getAddress();
-  console.log("✅ FlashLoanRebalancer deployed to:", rebalancerAddress, "\n");
+  console.log("   ✅ FlashLoanRebalancer deployed to:", rebalancerAddress);
 
-  // Deploy LiquidationPrevention
-  console.log("📦 Deploying LiquidationPrevention...");
+  // 4. Deploy LiquidationPrevention
+  console.log("\n4️⃣  Deploying LiquidationPrevention...");
   const LiquidationPrevention = await hre.ethers.getContractFactory("LiquidationPrevention");
   const liquidationPrevention = await LiquidationPrevention.deploy(
     aaveAdapterAddress,
     compoundAdapterAddress,
     rebalancerAddress,
-    AI_AGENT
+    aiAgentAddress
   );
   await liquidationPrevention.waitForDeployment();
   const liquidationPreventionAddress = await liquidationPrevention.getAddress();
-  console.log("✅ LiquidationPrevention deployed to:", liquidationPreventionAddress, "\n");
+  console.log("   ✅ LiquidationPrevention deployed to:", liquidationPreventionAddress);
 
-  // Summary
-  console.log("=" .repeat(60));
-  console.log("🎉 DEPLOYMENT COMPLETE!");
-  console.log("=" .repeat(60));
-  console.log("\n📋 Contract Addresses:");
-  console.log("  AaveV3Adapter:         ", aaveAdapterAddress);
-  console.log("  CompoundV3Adapter:     ", compoundAdapterAddress);
-  console.log("  FlashLoanRebalancer:   ", rebalancerAddress);
-  console.log("  LiquidationPrevention: ", liquidationPreventionAddress);
-  console.log("\n🔗 Network:", hre.network.name);
-  console.log("👤 AI Agent:", AI_AGENT);
-  console.log("\n💡 Next steps:");
-  console.log("  1. Verify contracts on Etherscan: npx hardhat run scripts/verify.js --network sepolia");
-  console.log("  2. Update agent/.env with contract addresses");
-  console.log("  3. Test monitoring: node agent/monitor.js");
-  console.log("=" .repeat(60));
-
-  // Save deployment info
-  const fs = require("fs");
-  const deploymentInfo = {
+  // Save deployment addresses
+  const deployment = {
     network: hre.network.name,
+    chainId: hre.network.config.chainId,
     deployer: deployer.address,
+    aiAgent: aiAgentAddress,
     timestamp: new Date().toISOString(),
     contracts: {
+      LiquidationPrevention: liquidationPreventionAddress,
       AaveV3Adapter: aaveAdapterAddress,
       CompoundV3Adapter: compoundAdapterAddress,
-      FlashLoanRebalancer: rebalancerAddress,
-      LiquidationPrevention: liquidationPreventionAddress,
+      FlashLoanRebalancer: rebalancerAddress
     },
-    config: {
-      aavePool: AAVE_POOL,
-      aavePoolAddressProvider: AAVE_POOL_ADDRESS_PROVIDER,
-      compoundComet: COMPOUND_COMET,
-      aiAgent: AI_AGENT,
-    },
+    protocolAddresses: {
+      AaveV3Pool: SEPOLIA_AAVE_V3_POOL,
+      AaveV3PoolAddressesProvider: SEPOLIA_AAVE_V3_POOL_ADDRESSES_PROVIDER,
+      CompoundV3CometUSDC: SEPOLIA_COMPOUND_V3_COMET_USDC
+    }
   };
 
-  fs.writeFileSync(
-    "deployment-info.json",
-    JSON.stringify(deploymentInfo, null, 2)
-  );
-  console.log("\n💾 Deployment info saved to deployment-info.json");
+  const deploymentsDir = path.join(__dirname, "../deployments");
+  if (!fs.existsSync(deploymentsDir)) {
+    fs.mkdirSync(deploymentsDir, { recursive: true });
+  }
+
+  const filename = `${hre.network.name}-${Date.now()}.json`;
+  const filepath = path.join(deploymentsDir, filename);
+  fs.writeFileSync(filepath, JSON.stringify(deployment, null, 2));
+
+  // Also save as latest
+  const latestPath = path.join(deploymentsDir, `${hre.network.name}-latest.json`);
+  fs.writeFileSync(latestPath, JSON.stringify(deployment, null, 2));
+
+  console.log("\n💾 Deployment addresses saved to:");
+  console.log("   ", filepath);
+  console.log("   ", latestPath);
+
+  console.log("\n✅ Deployment complete!\n");
+
+  console.log("📝 Contract Addresses:");
+  console.log(JSON.stringify(deployment.contracts, null, 2));
+
+  console.log("\n📋 Next Steps:");
+  console.log("1. Update agent/.env with these contract addresses");
+  console.log("2. Run: npx hardhat run scripts/verify.js --network", hre.network.name);
+  console.log("3. Start the AI agent: cd agent && python agent.py");
+
+  console.log("\n🔗 Etherscan URLs:");
+  const baseUrl = hre.network.name === "sepolia" 
+    ? "https://sepolia.etherscan.io" 
+    : "https://etherscan.io";
+  console.log(`   LiquidationPrevention: ${baseUrl}/address/${liquidationPreventionAddress}`);
+  console.log(`   AaveV3Adapter: ${baseUrl}/address/${aaveAdapterAddress}`);
+  console.log(`   CompoundV3Adapter: ${baseUrl}/address/${compoundAdapterAddress}`);
+  console.log(`   FlashLoanRebalancer: ${baseUrl}/address/${rebalancerAddress}`);
+
+  console.log("\n🎉 Ready to prevent liquidations!\n");
 }
 
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    console.error("\n❌ Deployment failed:", error);
     process.exit(1);
   });

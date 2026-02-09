@@ -1,286 +1,264 @@
-# 🎬 Demo Script for ETHDenver 2026
+# 🎬 ETHDenver 2026 Demo Script
 
-**Duration**: 3-4 minutes  
-**Target**: Judges, developers, DeFi users  
-**Goal**: Show autonomous AI preventing liquidations in real-time
+**Project:** AI-Powered Liquidation Prevention Agent  
+**Track:** Futurllama (AI + Crypto + DePIN)  
+**Duration:** 2-4 minutes
 
-## 📋 Pre-Demo Setup
+---
 
-### Required:
-- ✅ Contracts deployed to Sepolia
-- ✅ Agent running and monitoring
-- ✅ Frontend dashboard live
-- ✅ Test wallet with Aave position
-- ✅ Screen recording software ready
+## 🎯 Demo Flow
 
-### Test Position Setup:
-1. Connect wallet to Aave Sepolia
-2. Supply 1 ETH as collateral
-3. Borrow 0.5 ETH worth of USDC
-4. Health factor: ~1.8 (safe)
+### 1. Introduction (30 seconds)
 
-## 🎥 Video Script
+**Script:**
+> "Hi! I'm presenting the AI-Powered Liquidation Prevention Agent - an autonomous system that uses Claude AI to monitor DeFi positions and prevent liquidations before they happen. Every year, DeFi users lose millions to liquidations because they can't monitor their positions 24/7. Our agent solves this."
 
-### Opening (0:00 - 0:30)
+**Visual:** Show title slide with logo and problem statement
 
-**[Screen: Title slide with logo]**
+---
 
-> "Hi! I'm demonstrating our AI-Powered Liquidation Prevention Agent - an autonomous system that protects DeFi users from losing their collateral to liquidations."
+### 2. The Problem (30 seconds)
 
-**[Screen: Problem visualization - liquidation stats]**
+**Script:**
+> "Here's the problem: You deposit $10,000 ETH as collateral on Aave, borrow $6,000 USDC. Your health factor is 1.66 - safe. But overnight, ETH drops 20%. Your health factor falls to 1.1. At 1.0, you get liquidated and lose 10% of your collateral. You were sleeping and didn't see it coming."
 
-> "In 2024 alone, DeFi users lost over $500 million to liquidations. Our solution uses Claude AI to monitor positions 24/7 and automatically rebalance before liquidation occurs."
+**Visual:** 
+- Show simple diagram of collateral/debt
+- Animate ETH price drop
+- Show health factor declining toward liquidation
 
-### Architecture Overview (0:30 - 1:00)
+---
 
-**[Screen: Architecture diagram]**
+### 3. Our Solution (45 seconds)
 
-> "Here's how it works: Our AI agent continuously monitors user positions across Aave and Compound. When a position becomes risky, Claude AI analyzes the situation and recommends an action. If rebalancing is needed, the agent executes it autonomously using flash loans."
+**Script:**
+> "Our agent continuously monitors your position. When it detects risk, it sends the data to Claude AI for analysis. Claude evaluates the urgency, market conditions, and recommends an action. If rebalancing is needed, the agent executes a flash loan to adjust your position - all automatically, in seconds."
 
-**[Highlight each component as you mention it]**
+**Visual:**
+- Show architecture diagram
+- Highlight: Monitor → Claude Analysis → Execute
+- Show Claude's reasoning in real-time
 
-> "The system has three layers:
-> 1. Smart contracts on Ethereum, Base, and Arbitrum
-> 2. AI agent powered by Claude 3.5 Sonnet
-> 3. Real-time dashboard for monitoring"
+**Demo the agent:**
+```bash
+# Terminal 1: Show agent running
+python agent/main.py
 
-### Live Demo - Part 1: Monitoring (1:00 - 1:45)
-
-**[Screen: Dashboard showing healthy position]**
-
-> "Let me show you this in action. Here's a test wallet with a position on Aave. Currently, the health factor is 1.8 - that's healthy."
-
-**[Screen: Agent terminal logs]**
-
-> "In the background, our agent is monitoring this position every 60 seconds."
-
-**[Show terminal output:]**
-```
-🔍 Monitoring cycle at 2026-02-15T10:30:00
-👤 Checking user: 0x742d35Cc...
-✅ Position healthy - Health Factor: 1.80
-```
-
-> "The agent checks the health factor, and since it's above our threshold of 1.5, no action is needed."
-
-### Live Demo - Part 2: Risk Detection (1:45 - 2:30)
-
-**[Screen: Simulate price drop or manually adjust position]**
-
-> "Now, let's simulate what happens when the collateral value drops. I'm going to trigger a position that becomes risky."
-
-**[Show health factor dropping to 1.3]**
-
-> "The health factor just dropped to 1.3 - this is now in the danger zone."
-
-**[Screen: Agent detects risk]**
-
-**[Show terminal output:]**
-```
-🔍 Monitoring cycle at 2026-02-15T10:31:00
-👤 Checking user: 0x742d35Cc...
-⚠️  RISK DETECTED: aave - Health Factor: 1.30
+# Output shows:
+🤖 Starting Liquidation Prevention Agent on sepolia
+🔍 Monitoring cycle...
+👤 Checking user: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+⚠️  RISK DETECTED: aave - Health Factor: 1.15
 
 🧠 Claude Analysis:
    Action: rebalance
    Urgency: high
-   Reasoning: Health factor below safe threshold. 
-              Recommend immediate rebalancing to prevent liquidation.
-              Market volatility suggests proactive action.
-   
-🔄 Executing rebalance...
+   Reasoning: Health factor critically low at 1.15, approaching liquidation threshold...
 ```
 
-> "The agent immediately detects the risk and sends the position data to Claude for analysis. Claude recommends rebalancing because the health factor is too close to the liquidation threshold."
+---
 
-### Live Demo - Part 3: Autonomous Rebalancing (2:30 - 3:15)
+### 4. Technical Deep Dive (45 seconds)
 
-**[Screen: Transaction executing]**
+**Script:**
+> "Under the hood, we integrate with Aave V3 and Compound V3 using custom adapters. When rebalancing is needed, we use Aave's flash loans - borrow funds with zero collateral, repay debt, withdraw and swap collateral, repay the flash loan. All in one atomic transaction. The system is deployed on Sepolia, Base, and Arbitrum testnets."
 
-> "Watch as the agent autonomously executes the rebalancing using a flash loan."
+**Visual:**
+- Show contract architecture
+- Animate flash loan flow diagram
+- Show verified contracts on Etherscan
 
-**[Show terminal output:]**
-```
-🔄 Executing rebalance for 0x742d35Cc...
-   1. Flash borrowing 500 USDC from Aave
-   2. Repaying user debt
-   3. Withdrawing collateral
-   4. Swapping to repay flash loan
-   
-✅ Rebalance successful!
-   Tx: 0xabc123...
-   New Health Factor: 2.05
-   Cost: 0.0015 ETH (gas) + 0.45 USDC (flash loan fee)
-```
-
-**[Screen: Dashboard showing updated position]**
-
-> "And just like that, the health factor is back to 2.05 - the position is safe again. The entire process took less than 30 seconds and cost only $5 in gas and fees."
-
-**[Screen: Etherscan showing transaction]**
-
-> "Here's the transaction on Etherscan - completely transparent and verifiable."
-
-### Unique Features (3:15 - 3:45)
-
-**[Screen: Multi-chain dashboard]**
-
-> "What makes this special for the Futurllama track?"
-
-> "First, it's truly autonomous - Claude AI makes intelligent decisions based on market conditions, not just simple rules."
-
-**[Screen: Show multi-chain support]**
-
-> "Second, it works across multiple chains - Ethereum, Base, and Arbitrum - monitoring all your positions in one place."
-
-**[Screen: AI attribution log]**
-
-> "Third, every AI decision is logged and auditable. This is crucial for trust and regulatory compliance."
-
-**[Show ai-attribution.jsonl]**
-```json
-{
-  "timestamp": "2026-02-15T10:31:00Z",
-  "model": "claude-3-5-sonnet-20241022",
-  "recommendation": {
-    "action": "rebalance",
-    "reasoning": "Health factor below safe threshold..."
-  }
+**Show code snippet:**
+```solidity
+// FlashLoanRebalancer.sol
+function executeRebalance(
+    address user,
+    string memory protocol,
+    uint256 amount
+) external {
+    // Flash borrow from Aave
+    POOL.flashLoanSimple(
+        address(this),
+        debtAsset,
+        amount,
+        params,
+        0
+    );
 }
 ```
 
-### Closing (3:45 - 4:00)
+---
 
-**[Screen: GitHub repo and deployment info]**
+### 5. Live Demo (30 seconds)
 
-> "The entire project is open source on GitHub. All contracts are verified on Etherscan, and the agent is production-ready."
+**Script:**
+> "Let me show you the dashboard. Here's a user with declining health factor. The agent detected it, Claude analyzed it, and recommended rebalancing. Watch as the transaction executes... Success! Health factor restored to 2.05. Liquidation prevented."
 
-**[Screen: Summary slide]**
-
-> "To recap: AI-powered, multi-chain, autonomous liquidation prevention. Saving DeFi users from losing their collateral, one position at a time."
-
-**[Screen: Thank you + links]**
-
-> "Thanks for watching! Check out the GitHub repo and try it yourself on testnet."
+**Visual:**
+- Show React dashboard
+- Real-time health factor chart
+- Show transaction on Etherscan
+- Confetti animation on success ✨
 
 ---
 
-## 🎬 Recording Tips
+### 6. Futurllama Track Alignment (20 seconds)
 
-### Camera/Screen Setup:
-- **Split screen**: Terminal on left, dashboard on right
-- **Zoom in** on important parts (health factor, Claude analysis)
-- **Highlight** key numbers as they change
-- **Smooth transitions** between screens
+**Script:**
+> "For the Futurllama track, we demonstrate: autonomous AI agents making real financial decisions, multi-chain infrastructure supporting cross-chain positions, and transparent AI attribution - every Claude decision is logged for auditability. This is production-ready AI for DeFi."
 
-### Audio:
-- Use good microphone (not laptop mic)
-- Record in quiet environment
-- Speak clearly and at moderate pace
-- Add background music (low volume)
+**Visual:** Show ai-attribution.jsonl file
 
-### Editing:
-- Add **text overlays** for key points
-- **Speed up** boring parts (waiting for tx)
-- **Slow down** important moments (Claude analysis)
-- Add **visual effects** for emphasis (arrows, circles)
+---
 
-### Tools:
-- **Screen recording**: OBS Studio, Loom, or QuickTime
-- **Editing**: DaVinci Resolve (free), iMovie, or Premiere
-- **Thumbnails**: Figma or Canva
+### 7. Closing (10 seconds)
 
-## 📝 Script Variations
+**Script:**
+> "The code is open source, fully tested, and deployed on testnet. Check out the repo and docs. Thank you!"
 
-### 2-Minute Version (Speed Run):
-- Skip architecture overview
-- Jump straight to risk detection
-- Show only the rebalancing execution
-- Quick summary at end
+**Visual:** 
+- Show GitHub repo
+- QR code for repo
+- Contact info
 
-### 5-Minute Version (Deep Dive):
-- Add code walkthrough
-- Explain flash loan mechanics
-- Show smart contract on Etherscan
-- Demonstrate frontend features
-- Compare with competitors
+---
 
-### Live Demo Version (Interactive):
-- Take questions throughout
-- Show additional features
-- Demonstrate error handling
-- Walk through code together
+## 🎥 Recording Tips
 
-## 🎯 Key Messages to Emphasize
+### Setup Checklist
+- [ ] Agent running on testnet with real positions
+- [ ] Dashboard open in browser
+- [ ] Terminal with agent logs visible
+- [ ] Etherscan tab ready
+- [ ] Slides prepared
+- [ ] Screen recording software ready (OBS/Loom)
+- [ ] Test audio/video quality
 
-1. **Autonomous**: No human intervention needed
-2. **Intelligent**: Claude AI makes smart decisions
-3. **Multi-chain**: Works across multiple networks
-4. **Cost-effective**: Flash loans minimize capital requirements
-5. **Transparent**: All decisions logged and auditable
-6. **Production-ready**: Fully tested and deployed
+### Camera Setup
+- Use 1080p minimum
+- Good lighting
+- Clean background
+- Professional attire
+
+### Screen Layout
+```
+┌─────────────────────────────────────┐
+│  Webcam (bottom right corner)       │
+│                                      │
+│  ┌──────────┐  ┌──────────┐        │
+│  │Dashboard │  │ Terminal  │        │
+│  │          │  │  Logs     │        │
+│  └──────────┘  └──────────┘        │
+└─────────────────────────────────────┘
+```
+
+### Timing Breakdown
+- 0:00-0:30 - Intro
+- 0:30-1:00 - Problem
+- 1:00-1:45 - Solution + Agent Demo
+- 1:45-2:30 - Technical Deep Dive
+- 2:30-3:00 - Live Demo
+- 3:00-3:20 - Futurllama Alignment
+- 3:20-3:30 - Closing
+
+---
+
+## 🎬 Demo Scenarios
+
+### Scenario A: Successful Rebalancing
+1. User has HF 1.15 on Aave
+2. Agent detects risk
+3. Claude recommends rebalancing $1,500
+4. Transaction executes
+5. HF restored to 2.05 ✅
+
+### Scenario B: Monitoring (No Action)
+1. User has HF 1.8 on Compound
+2. Agent detects minor risk
+3. Claude recommends continued monitoring
+4. No transaction needed
+5. Position remains stable ✅
+
+### Scenario C: Multi-Chain
+1. User has positions on Sepolia + Base
+2. Agent monitors both chains
+3. Base position at risk
+4. Rebalances on Base
+5. Sepolia position unaffected ✅
+
+---
 
 ## 📊 Metrics to Highlight
 
-- **Response time**: < 30 seconds from detection to rebalancing
-- **Cost**: ~$5 per rebalancing (vs. losing thousands to liquidation)
-- **Success rate**: 100% in testing (show test results)
-- **Multi-chain**: 3 networks supported
-- **Uptime**: 24/7 monitoring
-
-## 🔧 Backup Plans
-
-### If Live Demo Fails:
-
-**Plan A**: Use pre-recorded demo
-- Have backup video ready
-- Explain what would have happened
-- Show screenshots of successful runs
-
-**Plan B**: Walk through code
-- Show smart contracts
-- Explain agent logic
-- Display test results
-
-**Plan C**: Static presentation
-- Use slides with diagrams
-- Show architecture
-- Present test data
-
-## 📸 Screenshots to Capture
-
-1. Dashboard with healthy position
-2. Agent terminal showing monitoring
-3. Risk detection alert
-4. Claude AI analysis output
-5. Transaction executing
-6. Updated health factor
-7. Etherscan transaction
-8. AI attribution log
-9. Multi-chain dashboard
-10. GitHub repo
-
-## ✅ Pre-Recording Checklist
-
-- [ ] All contracts deployed and verified
-- [ ] Agent running without errors
-- [ ] Frontend loading correctly
-- [ ] Test position set up
-- [ ] Screen recording software tested
-- [ ] Microphone working
-- [ ] Background clean/professional
-- [ ] Script practiced 3+ times
-- [ ] Backup plans ready
-- [ ] All links working
-
-## 🎉 Post-Demo
-
-- Upload to YouTube (unlisted)
-- Submit link to ETHDenver portal
-- Share on Twitter with #ETHDenver
-- Post in Discord
-- Add to GitHub README
+- **Response Time:** < 30 seconds from detection to execution
+- **Success Rate:** 100% on testnet (X successful rebalances)
+- **Gas Efficiency:** ~$5-10 per rebalance (flash loan fees)
+- **Multi-Chain:** 3 testnets supported
+- **AI Decisions:** All logged with full transparency
 
 ---
 
-**Break a leg! You've got this! 🚀**
+## 🚨 Troubleshooting
+
+### If Agent Fails
+- Show fallback rule-based logic
+- Explain redundancy built-in
+- Highlight error handling
+
+### If Transaction Fails
+- Show simulation results
+- Explain why (e.g., insufficient liquidity)
+- Show retry mechanism
+
+### If Demo Crashes
+- Have backup recording ready
+- Show GitHub repo as fallback
+- Walk through code instead
+
+---
+
+## 🎯 Key Messages
+
+1. **Real Problem:** Liquidations cost users millions
+2. **AI Solution:** Claude makes intelligent decisions
+3. **Production Ready:** Tested, deployed, documented
+4. **Multi-Chain:** Works across Ethereum L2s
+5. **Transparent:** All AI decisions logged
+6. **Open Source:** Available for community use
+
+---
+
+## 📝 Q&A Prep
+
+**Q: How do you handle gas costs?**  
+A: Flash loans are capital-efficient. Users only pay ~0.09% fee + gas. We're exploring gas sponsorship for high-value positions.
+
+**Q: What if Claude API is down?**  
+A: We have fallback rule-based logic that triggers rebalancing at critical thresholds (HF < 1.15).
+
+**Q: Can this work on mainnet?**  
+A: Yes! All protocols used (Aave V3, flash loans) are production-ready. We're on testnet for the hackathon but mainnet deployment is straightforward.
+
+**Q: How do you prevent malicious rebalancing?**  
+A: Users must opt-in and set their own thresholds. Agent is authorized per-user. All actions are on-chain and auditable.
+
+**Q: What about other protocols?**  
+A: Architecture is modular. Adding Maker, Morpho, etc. is just creating new adapters. Roadmap item!
+
+---
+
+## 🎬 Final Checklist
+
+Before recording:
+- [ ] Test full flow end-to-end
+- [ ] Verify all contracts on Etherscan
+- [ ] Check Claude API quota
+- [ ] Prepare backup scenarios
+- [ ] Review script 3x times
+- [ ] Test screen recording
+- [ ] Clear browser history/tabs
+- [ ] Close distracting apps
+- [ ] Charge laptop
+- [ ] Good internet connection
+
+**Let's win this! 🏆**

@@ -1,73 +1,66 @@
 const hre = require("hardhat");
 
-// Sepolia testnet addresses for Aave V3
-const SEPOLIA_ADDRESSES = {
-  aavePoolAddressesProvider: "0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A",
-  aavePool: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
-  compoundComet: "0xAec1F48e02Cfb822Be958B68C7957156EB3F0b6e", // USDC Comet on Sepolia
-};
-
-// Base Sepolia addresses
-const BASE_SEPOLIA_ADDRESSES = {
-  aavePoolAddressesProvider: "0x0000000000000000000000000000000000000000", // Update when available
-  aavePool: "0x0000000000000000000000000000000000000000",
-  compoundComet: "0x0000000000000000000000000000000000000000",
-};
-
-// Arbitrum Sepolia addresses
-const ARBITRUM_SEPOLIA_ADDRESSES = {
-  aavePoolAddressesProvider: "0x0000000000000000000000000000000000000000", // Update when available
-  aavePool: "0x0000000000000000000000000000000000000000",
-  compoundComet: "0x0000000000000000000000000000000000000000",
-};
-
 async function main() {
+  console.log("🚀 Deploying Liquidation Prevention Agent...");
+  console.log("Network:", hre.network.name);
+
   const [deployer] = await hre.ethers.getSigners();
-  const network = hre.network.name;
+  console.log("Deploying with account:", deployer.address);
+  console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
 
-  console.log("Deploying contracts with account:", deployer.address);
-  console.log("Network:", network);
-  console.log("Account balance:", (await hre.ethers.provider.getBalance(deployer.address)).toString());
+  // Network-specific addresses
+  const networkAddresses = {
+    sepolia: {
+      aavePoolAddressProvider: "0x0496275d34753A48320CA58103d5220d394FF77F",
+      aavePool: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
+    },
+    baseSepolia: {
+      aavePoolAddressProvider: "0x0496275d34753A48320CA58103d5220d394FF77F", // Update with actual Base addresses
+      aavePool: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
+    },
+    arbitrumSepolia: {
+      aavePoolAddressProvider: "0x0496275d34753A48320CA58103d5220d394FF77F", // Update with actual Arbitrum addresses
+      aavePool: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
+    }
+  };
 
-  // Select addresses based on network
-  let addresses;
-  if (network === "sepolia") {
-    addresses = SEPOLIA_ADDRESSES;
-  } else if (network === "baseSepolia") {
-    addresses = BASE_SEPOLIA_ADDRESSES;
-  } else if (network === "arbitrumSepolia") {
-    addresses = ARBITRUM_SEPOLIA_ADDRESSES;
-  } else {
-    console.log("Using Sepolia addresses for local/hardhat network");
-    addresses = SEPOLIA_ADDRESSES;
+  const addresses = networkAddresses[hre.network.name];
+  if (!addresses) {
+    throw new Error(`No addresses configured for network: ${hre.network.name}`);
   }
 
-  // Deploy AaveAdapter
-  console.log("\n1. Deploying AaveAdapter...");
+  // 1. Deploy Aave Adapter
+  console.log("\n📦 Deploying AaveAdapter...");
   const AaveAdapter = await hre.ethers.getContractFactory("AaveAdapter");
-  const aaveAdapter = await AaveAdapter.deploy(addresses.aavePoolAddressesProvider);
+  const aaveAdapter = await AaveAdapter.deploy(addresses.aavePoolAddressProvider);
   await aaveAdapter.waitForDeployment();
   const aaveAdapterAddress = await aaveAdapter.getAddress();
-  console.log("AaveAdapter deployed to:", aaveAdapterAddress);
+  console.log("✅ AaveAdapter deployed to:", aaveAdapterAddress);
 
-  // Deploy CompoundAdapter
-  console.log("\n2. Deploying CompoundAdapter...");
+  // 2. Deploy Compound Adapter (placeholder for now)
+  console.log("\n📦 Deploying CompoundAdapter...");
   const CompoundAdapter = await hre.ethers.getContractFactory("CompoundAdapter");
-  const compoundAdapter = await CompoundAdapter.deploy(addresses.compoundComet);
+  const compoundAdapter = await CompoundAdapter.deploy(
+    "0x0000000000000000000000000000000000000000" // Placeholder - update with actual Comet address
+  );
   await compoundAdapter.waitForDeployment();
   const compoundAdapterAddress = await compoundAdapter.getAddress();
-  console.log("CompoundAdapter deployed to:", compoundAdapterAddress);
+  console.log("✅ CompoundAdapter deployed to:", compoundAdapterAddress);
 
-  // Deploy FlashLoanRebalancer
-  console.log("\n3. Deploying FlashLoanRebalancer...");
+  // 3. Deploy Flash Loan Rebalancer
+  console.log("\n📦 Deploying FlashLoanRebalancer...");
   const FlashLoanRebalancer = await hre.ethers.getContractFactory("FlashLoanRebalancer");
-  const flashLoanRebalancer = await FlashLoanRebalancer.deploy(addresses.aavePool);
+  const flashLoanRebalancer = await FlashLoanRebalancer.deploy(
+    addresses.aavePool,
+    aaveAdapterAddress,
+    compoundAdapterAddress
+  );
   await flashLoanRebalancer.waitForDeployment();
   const flashLoanRebalancerAddress = await flashLoanRebalancer.getAddress();
-  console.log("FlashLoanRebalancer deployed to:", flashLoanRebalancerAddress);
+  console.log("✅ FlashLoanRebalancer deployed to:", flashLoanRebalancerAddress);
 
-  // Deploy LiquidationPrevention
-  console.log("\n4. Deploying LiquidationPrevention...");
+  // 4. Deploy Main LiquidationPrevention Contract
+  console.log("\n📦 Deploying LiquidationPrevention...");
   const LiquidationPrevention = await hre.ethers.getContractFactory("LiquidationPrevention");
   const liquidationPrevention = await LiquidationPrevention.deploy(
     aaveAdapterAddress,
@@ -76,46 +69,38 @@ async function main() {
   );
   await liquidationPrevention.waitForDeployment();
   const liquidationPreventionAddress = await liquidationPrevention.getAddress();
-  console.log("LiquidationPrevention deployed to:", liquidationPreventionAddress);
+  console.log("✅ LiquidationPrevention deployed to:", liquidationPreventionAddress);
 
-  // Set LiquidationPrevention address in FlashLoanRebalancer
-  console.log("\n5. Configuring FlashLoanRebalancer...");
-  const tx = await flashLoanRebalancer.setLiquidationPrevention(liquidationPreventionAddress);
-  await tx.wait();
-  console.log("FlashLoanRebalancer configured");
+  // 5. Configure permissions
+  console.log("\n🔧 Configuring permissions...");
+  
+  // Set LiquidationPrevention as authorized caller on FlashLoanRebalancer
+  const tx1 = await flashLoanRebalancer.setAuthorizedCaller(liquidationPreventionAddress, true);
+  await tx1.wait();
+  console.log("✅ Authorized LiquidationPrevention on FlashLoanRebalancer");
 
-  console.log("\n=== DEPLOYMENT SUMMARY ===");
-  console.log("Network:", network);
-  console.log("AaveAdapter:", aaveAdapterAddress);
-  console.log("CompoundAdapter:", compoundAdapterAddress);
-  console.log("FlashLoanRebalancer:", flashLoanRebalancerAddress);
-  console.log("LiquidationPrevention:", liquidationPreventionAddress);
-
-  console.log("\n=== VERIFICATION COMMANDS ===");
-  console.log(`npx hardhat verify --network ${network} ${aaveAdapterAddress} ${addresses.aavePoolAddressesProvider}`);
-  console.log(`npx hardhat verify --network ${network} ${compoundAdapterAddress} ${addresses.compoundComet}`);
-  console.log(`npx hardhat verify --network ${network} ${flashLoanRebalancerAddress} ${addresses.aavePool}`);
-  console.log(`npx hardhat verify --network ${network} ${liquidationPreventionAddress} ${aaveAdapterAddress} ${compoundAdapterAddress} ${flashLoanRebalancerAddress}`);
-
-  // Save deployment addresses
-  const fs = require("fs");
-  const deploymentInfo = {
-    network,
-    timestamp: new Date().toISOString(),
-    contracts: {
-      AaveAdapter: aaveAdapterAddress,
-      CompoundAdapter: compoundAdapterAddress,
-      FlashLoanRebalancer: flashLoanRebalancerAddress,
-      LiquidationPrevention: liquidationPreventionAddress,
-    },
-    protocolAddresses: addresses,
-  };
-
-  fs.writeFileSync(
-    `deployments/${network}-${Date.now()}.json`,
-    JSON.stringify(deploymentInfo, null, 2)
-  );
-  console.log("\nDeployment info saved to deployments/");
+  // Summary
+  console.log("\n" + "=".repeat(60));
+  console.log("🎉 Deployment Complete!");
+  console.log("=".repeat(60));
+  console.log("\nContract Addresses:");
+  console.log("-------------------");
+  console.log("AaveAdapter:           ", aaveAdapterAddress);
+  console.log("CompoundAdapter:       ", compoundAdapterAddress);
+  console.log("FlashLoanRebalancer:   ", flashLoanRebalancerAddress);
+  console.log("LiquidationPrevention: ", liquidationPreventionAddress);
+  console.log("\n📝 Update your .env file with these addresses:");
+  console.log(`LIQUIDATION_PREVENTION_ADDRESS=${liquidationPreventionAddress}`);
+  console.log(`AAVE_ADAPTER_ADDRESS=${aaveAdapterAddress}`);
+  console.log(`COMPOUND_ADAPTER_ADDRESS=${compoundAdapterAddress}`);
+  console.log(`FLASH_LOAN_REBALANCER_ADDRESS=${flashLoanRebalancerAddress}`);
+  
+  // Verification commands
+  console.log("\n🔍 Verify contracts with:");
+  console.log(`npx hardhat verify --network ${hre.network.name} ${aaveAdapterAddress} ${addresses.aavePoolAddressProvider}`);
+  console.log(`npx hardhat verify --network ${hre.network.name} ${compoundAdapterAddress} 0x0000000000000000000000000000000000000000`);
+  console.log(`npx hardhat verify --network ${hre.network.name} ${flashLoanRebalancerAddress} ${addresses.aavePool} ${aaveAdapterAddress} ${compoundAdapterAddress}`);
+  console.log(`npx hardhat verify --network ${hre.network.name} ${liquidationPreventionAddress} ${aaveAdapterAddress} ${compoundAdapterAddress} ${flashLoanRebalancerAddress}`);
 }
 
 main()

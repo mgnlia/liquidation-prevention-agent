@@ -1,10 +1,15 @@
 # 🚀 Deployment Guide
 
-Complete guide for deploying the AI-Powered Liquidation Prevention Agent to Sepolia testnet.
-
 ## Prerequisites
 
-### Required Tools
+### Required Accounts & Keys
+- [ ] Alchemy/Infura account (Sepolia RPC URL)
+- [ ] Etherscan API key
+- [ ] Anthropic API key (Claude)
+- [ ] The Graph Studio account
+- [ ] Sepolia testnet ETH (0.5+ recommended)
+
+### Required Software
 ```bash
 node >= 18.0.0
 npm >= 9.0.0
@@ -12,421 +17,324 @@ python >= 3.10
 git
 ```
 
-### API Keys & Accounts
-1. **Alchemy/Infura** - Sepolia RPC endpoint
-2. **Etherscan** - API key for contract verification
-3. **Anthropic** - Claude API key
-4. **MetaMask** - Wallet with Sepolia ETH
-
-### Get Testnet ETH
-```bash
-# Sepolia Faucets:
-# https://sepoliafaucet.com/
-# https://www.alchemy.com/faucets/ethereum-sepolia
-# https://faucet.quicknode.com/ethereum/sepolia
-```
-
-## Step 1: Clone & Install
-
-```bash
-# Clone repository
-git clone https://github.com/mgnlia/liquidation-prevention-agent.git
-cd liquidation-prevention-agent
-
-# Install contract dependencies
-cd contracts
-npm install
-
-# Install agent dependencies
-cd ../agent
-pip install -r requirements.txt
-
-# Install frontend dependencies
-cd ../frontend
-npm install
-```
-
-## Step 2: Environment Configuration
+## Step 1: Environment Setup
 
 ### Contracts Environment
-
-Create `contracts/.env`:
-
 ```bash
-# Network Configuration
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
-PRIVATE_KEY=your_private_key_here
+cd contracts
+cp .env.example .env
+```
+
+Edit `contracts/.env`:
+```env
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+PRIVATE_KEY=your_deployer_private_key_without_0x
 ETHERSCAN_API_KEY=your_etherscan_api_key
 
-# Sepolia Contract Addresses (Official)
-AAVE_V3_POOL=0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951
-AAVE_V3_POOL_ADDRESSES_PROVIDER=0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A
-COMPOUND_V3_COMET_USDC=0xAec1F48e02Cfb822Be958B68C7957156EB3F0b6e
-
-# Deployment Configuration
-AI_AGENT_ADDRESS=0xYourAgentWalletAddress
-HEALTH_FACTOR_THRESHOLD=1500000000000000000  # 1.5 in wei (18 decimals)
+# Sepolia Addresses (Pre-configured)
+AAVE_POOL_ADDRESS_PROVIDER=0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A
+COMPOUND_COMET_ADDRESS=0xAec1F48e02Cfb822Be958B68C7957156EB3F0b6e
 ```
 
 ### Agent Environment
-
-Create `agent/.env`:
-
 ```bash
-# Blockchain Configuration
-WEB3_PROVIDER_URI=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
-CHAIN_ID=11155111
-NETWORK_NAME=sepolia
+cd agent
+cp .env.example .env
+```
 
-# Contract Addresses (will be filled after deployment)
+Edit `agent/.env`:
+```env
+ANTHROPIC_API_KEY=sk-ant-xxxxx
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+PRIVATE_KEY=your_agent_private_key_without_0x
+
+# Will be populated after contract deployment
 LIQUIDATION_PREVENTION_ADDRESS=
 AAVE_ADAPTER_ADDRESS=
 COMPOUND_ADAPTER_ADDRESS=
 FLASH_LOAN_REBALANCER_ADDRESS=
-
-# Agent Configuration
-AGENT_PRIVATE_KEY=your_agent_wallet_private_key
-ANTHROPIC_API_KEY=sk-ant-your-claude-api-key
-
-# Monitoring Configuration
-MONITOR_INTERVAL_SECONDS=60
-HEALTH_FACTOR_THRESHOLD=1.5
-MIN_AGENT_BALANCE_ETH=0.1
-
-# The Graph (optional - for production)
-SUBGRAPH_URL=https://api.studio.thegraph.com/query/YOUR_SUBGRAPH
 ```
 
 ### Frontend Environment
-
-Create `frontend/.env.local`:
-
 ```bash
-NEXT_PUBLIC_CHAIN_ID=11155111
-NEXT_PUBLIC_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
-NEXT_PUBLIC_LIQUIDATION_PREVENTION_ADDRESS=
+cd frontend
+cp .env.example .env.local
+```
+
+Edit `frontend/.env.local`:
+```env
+NEXT_PUBLIC_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
+
+# Will be populated after contract deployment
+NEXT_PUBLIC_LIQUIDATION_PREVENTION_ADDRESS=
+NEXT_PUBLIC_SUBGRAPH_URL=
+```
+
+## Step 2: Get Sepolia Testnet ETH
+
+### Recommended Faucets
+1. **Alchemy Sepolia Faucet**: https://sepoliafaucet.com/
+2. **Infura Sepolia Faucet**: https://www.infura.io/faucet/sepolia
+3. **Chainlink Faucet**: https://faucets.chain.link/sepolia
+
+**Minimum Required:** 0.5 ETH (for deployment + testing)
+
+Verify balance:
+```bash
+cast balance YOUR_ADDRESS --rpc-url $SEPOLIA_RPC_URL
 ```
 
 ## Step 3: Deploy Smart Contracts
 
-### Compile Contracts
-
+### Install Dependencies
 ```bash
 cd contracts
+npm install
+```
+
+### Compile Contracts
+```bash
 npx hardhat compile
 ```
 
 Expected output:
 ```
-Compiled 12 Solidity files successfully
+✓ Compiled 15 Solidity files successfully
 ```
 
-### Run Tests
-
+### Run Tests (Optional but Recommended)
 ```bash
 npx hardhat test
 ```
 
-All tests should pass ✅
-
 ### Deploy to Sepolia
-
 ```bash
 npx hardhat run scripts/deploy.js --network sepolia
 ```
 
 **Expected Output:**
 ```
-🚀 Deploying Liquidation Prevention System to sepolia...
+Deploying contracts to Sepolia...
 
-📋 Deployment Configuration:
-   Network: sepolia (11155111)
-   Deployer: 0x...
-   Balance: 1.5 ETH
+AaveV3Adapter deployed to: 0x1234...
+CompoundV3Adapter deployed to: 0x5678...
+FlashLoanRebalancer deployed to: 0x9abc...
+LiquidationPrevention deployed to: 0xdef0...
 
-📦 Deploying Contracts...
+✅ All contracts deployed successfully!
 
-✅ AaveV3Adapter deployed to: 0x...
-✅ CompoundV3Adapter deployed to: 0x...
-✅ FlashLoanRebalancer deployed to: 0x...
-✅ LiquidationPrevention deployed to: 0x...
-
-💾 Saving deployment addresses...
-✅ Deployment complete!
-
-📝 Contract Addresses:
-{
-  "network": "sepolia",
-  "chainId": 11155111,
-  "contracts": {
-    "LiquidationPrevention": "0x...",
-    "AaveV3Adapter": "0x...",
-    "CompoundV3Adapter": "0x...",
-    "FlashLoanRebalancer": "0x..."
-  },
-  "timestamp": "2026-01-30T..."
-}
+Save these addresses to agent/.env and frontend/.env.local
 ```
 
-**Important:** Save these addresses! You'll need them for:
-- Agent configuration
-- Frontend configuration
-- Etherscan verification
-
-### Verify on Etherscan
-
+### Verify Contracts on Etherscan
 ```bash
 npx hardhat run scripts/verify.js --network sepolia
 ```
 
-This will verify all 4 contracts on Etherscan, making them publicly viewable and trustworthy.
+**Expected Output:**
+```
+Verifying contracts on Etherscan...
 
-**Verification URLs:**
-- LiquidationPrevention: `https://sepolia.etherscan.io/address/0x...#code`
-- AaveV3Adapter: `https://sepolia.etherscan.io/address/0x...#code`
-- CompoundV3Adapter: `https://sepolia.etherscan.io/address/0x...#code`
-- FlashLoanRebalancer: `https://sepolia.etherscan.io/address/0x...#code`
-
-## Step 4: Update Configuration
-
-### Update Agent .env
-
-After deployment, update `agent/.env` with deployed addresses:
-
-```bash
-LIQUIDATION_PREVENTION_ADDRESS=0xYourDeployedAddress
-AAVE_ADAPTER_ADDRESS=0xYourDeployedAddress
-COMPOUND_ADAPTER_ADDRESS=0xYourDeployedAddress
-FLASH_LOAN_REBALANCER_ADDRESS=0xYourDeployedAddress
+✅ AaveV3Adapter verified: https://sepolia.etherscan.io/address/0x1234...
+✅ CompoundV3Adapter verified: https://sepolia.etherscan.io/address/0x5678...
+✅ FlashLoanRebalancer verified: https://sepolia.etherscan.io/address/0x9abc...
+✅ LiquidationPrevention verified: https://sepolia.etherscan.io/address/0xdef0...
 ```
 
-### Update Frontend .env.local
+## Step 4: Deploy Subgraph
 
+### Install Graph CLI
 ```bash
-NEXT_PUBLIC_LIQUIDATION_PREVENTION_ADDRESS=0xYourDeployedAddress
+npm install -g @graphprotocol/graph-cli
 ```
 
-## Step 5: Deploy The Graph Subgraph (Optional)
+### Authenticate with The Graph Studio
+```bash
+graph auth --studio YOUR_DEPLOY_KEY
+```
 
-For production-grade monitoring, deploy a subgraph:
-
+### Deploy Subgraph
 ```bash
 cd subgraph
+npm install
 
-# Install Graph CLI
-npm install -g @graphprotocol/graph-cli
-
-# Authenticate
-graph auth --studio YOUR_DEPLOY_KEY
-
-# Create subgraph
-graph create --studio liquidation-prevention-agent
-
-# Deploy
+# Update subgraph.yaml with deployed contract addresses
+# Then deploy:
 graph codegen
 graph build
 graph deploy --studio liquidation-prevention-agent
 ```
 
-Update agent `.env`:
-```bash
-SUBGRAPH_URL=https://api.studio.thegraph.com/query/YOUR_SUBGRAPH_ID/liquidation-prevention-agent/v0.0.1
+**Save the subgraph URL** to `frontend/.env.local`:
+```env
+NEXT_PUBLIC_SUBGRAPH_URL=https://api.studio.thegraph.com/query/xxxxx/liquidation-prevention-agent/version/latest
 ```
 
-## Step 6: Start the AI Agent
+## Step 5: Configure AI Agent
 
+### Update Agent Configuration
+Edit `agent/.env` with deployed contract addresses from Step 3.
+
+### Install Python Dependencies
+```bash
+cd agent
+pip install -r requirements.txt
+```
+
+### Test Agent Connection
+```bash
+python -c "from web3 import Web3; print(Web3(Web3.HTTPProvider('YOUR_RPC_URL')).is_connected())"
+```
+
+Expected: `True`
+
+### Test Claude API
+```bash
+python -c "import anthropic; client = anthropic.Anthropic(api_key='YOUR_KEY'); print('✓ Claude API connected')"
+```
+
+## Step 6: Deploy Frontend
+
+### Install Dependencies
+```bash
+cd frontend
+npm install
+```
+
+### Build Production Bundle
+```bash
+npm run build
+```
+
+### Deploy to Vercel (Recommended)
+```bash
+npm install -g vercel
+vercel --prod
+```
+
+Or deploy to Netlify:
+```bash
+npm install -g netlify-cli
+netlify deploy --prod --dir=out
+```
+
+## Step 7: End-to-End Testing
+
+### 1. Start AI Agent
 ```bash
 cd agent
 python agent.py
 ```
 
-**Expected Output:**
+Expected output:
 ```
-╔════════════════════════════════════════════════════════════╗
-║   AI-POWERED LIQUIDATION PREVENTION AGENT                  ║
-║   HackMoney 2026                                           ║
-║   Autonomous DeFi Position Protection                      ║
-╚════════════════════════════════════════════════════════════╝
-
-🤖 Initializing AI Liquidation Prevention Agent...
-✅ Agent initialized successfully
-
-============================================================
-🚀 LIQUIDATION PREVENTION AGENT STARTING
-============================================================
-
-💰 Agent Wallet: 0x...
-   Balance: 0.5000 ETH
-
-⏱️  Monitor Interval: 60s
-🎯 Health Factor Threshold: 1.5
-
-============================================================
-🔄 MONITORING CYCLE - 2026-01-30 10:00:00
-============================================================
-
-ℹ️  No registered users found. Waiting for registrations...
+🤖 AI Liquidation Prevention Agent Started
+📊 Monitoring interval: 60s
+🔗 Connected to Sepolia: 0xdef0...
+✅ Agent ready
 ```
 
-The agent is now running and will automatically monitor registered positions!
-
-## Step 7: Start the Frontend
-
+### 2. Open Frontend
+Navigate to your deployed frontend URL or run locally:
 ```bash
 cd frontend
 npm run dev
+# Open http://localhost:3000
 ```
 
-Open http://localhost:3000
+### 3. Register Test Position
 
-## Step 8: Test the System
+**Option A: Use Frontend**
+1. Connect wallet (MetaMask)
+2. Click "Register Position"
+3. Approve transaction
 
-### Register a Test Position
-
-1. Go to frontend dashboard
-2. Connect wallet (MetaMask on Sepolia)
-3. Click "Register Position"
-4. Select protocols to monitor (Aave V3, Compound V3)
-5. Confirm transaction
-
-### Create a Test Position on Aave
-
+**Option B: Use Hardhat Console**
 ```bash
-# 1. Go to Aave V3 Sepolia
-https://app.aave.com/?marketName=proto_sepolia_v3
-
-# 2. Get test tokens from faucet
-https://staging.aave.com/faucet/
-
-# 3. Supply collateral (e.g., 1 ETH)
-# 4. Borrow stablecoins (e.g., 500 USDC)
-# 5. Monitor your health factor
+cd contracts
+npx hardhat console --network sepolia
 ```
 
-### Watch the Agent Work
-
-The agent will:
-1. Detect your registered position
-2. Monitor health factor every 60s
-3. Analyze risk using Claude API
-4. Suggest rebalancing if HF < 1.5
-5. Execute flash loan rebalancing if critical
-
-**Agent Console Output:**
-```
-============================================================
-🔄 MONITORING CYCLE - 2026-01-30 10:01:00
-============================================================
-
-👥 Monitoring 1 registered user(s)
-
-📊 Checking position: 0xYourAddress
-   Health Factor: 2.3456
-   Risk Level: LOW
-   Position is healthy. Continue monitoring.
-
-✅ All positions healthy
-
-⏱️  Cycle completed in 3.45s
-============================================================
+```javascript
+const LiquidationPrevention = await ethers.getContractFactory("LiquidationPrevention");
+const contract = LiquidationPrevention.attach("YOUR_DEPLOYED_ADDRESS");
+await contract.registerPosition();
 ```
 
-## Step 9: Deploy Frontend (Production)
-
-### Deploy to Vercel
-
-```bash
-cd frontend
-
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy
-vercel --prod
+### 4. Monitor Agent Logs
+Watch for:
+```
+📊 Fetching positions from subgraph...
+✅ Found 1 position(s) to monitor
+🔍 Analyzing position 0x1234... (HF: 2.15)
+✅ Position healthy - no action needed
 ```
 
-### Deploy to Netlify
-
-```bash
-cd frontend
-
-# Build
-npm run build
-
-# Install Netlify CLI
-npm install -g netlify-cli
-
-# Deploy
-netlify deploy --prod --dir=out
-```
-
-## Deployment Checklist
-
-- [ ] Sepolia testnet ETH obtained (>0.5 ETH)
-- [ ] All environment variables configured
-- [ ] Contracts compiled successfully
-- [ ] Tests passing
-- [ ] Contracts deployed to Sepolia
-- [ ] Contracts verified on Etherscan
-- [ ] Agent .env updated with contract addresses
-- [ ] Frontend .env.local updated
-- [ ] AI agent running
-- [ ] Frontend running
-- [ ] Test position registered
-- [ ] Agent successfully monitoring
-- [ ] (Optional) Subgraph deployed
-- [ ] (Optional) Frontend deployed to production
+### 5. Test Risk Scenario (Optional)
+To trigger AI analysis:
+1. Borrow near liquidation threshold on Aave Sepolia
+2. Wait for agent to detect (< 60s)
+3. Agent should suggest rebalancing strategy
 
 ## Troubleshooting
 
-### Contract Deployment Fails
+### "Insufficient funds for gas"
+- Get more Sepolia ETH from faucets
+- Check balance: `cast balance YOUR_ADDRESS --rpc-url $SEPOLIA_RPC_URL`
 
-**Error:** `insufficient funds for gas`
-- **Solution:** Get more Sepolia ETH from faucets
+### "Contract not verified"
+- Wait 1-2 minutes after deployment
+- Re-run: `npx hardhat run scripts/verify.js --network sepolia`
 
-**Error:** `nonce too low`
-- **Solution:** Reset MetaMask nonce or wait for pending tx
+### "Subgraph indexing failed"
+- Check contract addresses in `subgraph/subgraph.yaml`
+- Verify events are emitting: Check Etherscan contract logs
 
-### Agent Connection Issues
+### "Agent not fetching positions"
+- Verify subgraph is synced: Check The Graph Studio dashboard
+- Test RPC connection: `curl -X POST $SEPOLIA_RPC_URL -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'`
 
-**Error:** `HTTPError: 401 Unauthorized`
-- **Solution:** Check ANTHROPIC_API_KEY is valid
+### "Claude API errors"
+- Verify API key: https://console.anthropic.com/
+- Check rate limits (free tier: 5 req/min)
 
-**Error:** `Web3 connection failed`
-- **Solution:** Verify SEPOLIA_RPC_URL is correct
+## Production Checklist
 
-### No Positions Detected
+- [ ] All contracts deployed to Sepolia
+- [ ] All contracts verified on Etherscan
+- [ ] Subgraph deployed and syncing
+- [ ] Agent running with valid API keys
+- [ ] Frontend deployed and accessible
+- [ ] Test position registered successfully
+- [ ] Agent detected and analyzed position
+- [ ] Documentation complete (README, DEMO.md, AI_ATTRIBUTION.md)
+- [ ] Video demo recorded (2-4 minutes)
+- [ ] GitHub repo public with clean commit history
 
-- Ensure you called `registerUser()` on the contract
-- Check agent is using correct contract address
-- Verify wallet has Sepolia ETH for gas
+## Deployment Costs (Sepolia)
 
-## Production Considerations
+| Component | Gas Cost | USD Equivalent (Testnet) |
+|-----------|----------|--------------------------|
+| AaveV3Adapter | ~1.2M gas | $0 (testnet) |
+| CompoundV3Adapter | ~1.1M gas | $0 (testnet) |
+| FlashLoanRebalancer | ~2.5M gas | $0 (testnet) |
+| LiquidationPrevention | ~1.8M gas | $0 (testnet) |
+| **Total** | **~6.6M gas** | **$0 (testnet)** |
 
-### Security
-- Use hardware wallet for deployer
-- Use separate agent wallet with limited funds
-- Enable timelock for contract upgrades
-- Conduct security audit before mainnet
+**Mainnet Estimate:** ~$150-250 (at 30 gwei, ETH @ $3000)
 
-### Monitoring
-- Set up Sentry for error tracking
-- Use Grafana for metrics dashboard
-- Enable alerting for critical events
+## Next Steps
 
-### Scaling
-- Use Redis for caching position data
-- Deploy multiple agent instances
-- Use WebSocket for real-time updates
-- Optimize gas usage
+After successful deployment:
+1. Update `README.md` with live links
+2. Record demo video following `DEMO.md` script
+3. Submit to HackMoney 2026
+4. Share on Twitter/Discord
 
 ## Support
 
-- **Documentation:** [GitHub Wiki](https://github.com/mgnlia/liquidation-prevention-agent/wiki)
-- **Issues:** [GitHub Issues](https://github.com/mgnlia/liquidation-prevention-agent/issues)
-- **Discord:** [Join our community](#)
-
----
-
-**Built for HackMoney 2026** 🏆
+Issues? Check:
+- [GitHub Issues](https://github.com/mgnlia/liquidation-prevention-agent/issues)
+- [HackMoney Discord](https://discord.gg/ethglobal)
+- [Documentation](./ARCHITECTURE.md)

@@ -5,90 +5,73 @@ Configuration for the Liquidation Prevention Agent
 import os
 from dataclasses import dataclass
 from typing import Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @dataclass
 class Config:
     """Agent configuration"""
     
-    # Network settings
-    network: str
-    rpc_url: str
-    chain_id: int
+    # Network Configuration
+    network: str = os.getenv("NETWORK", "sepolia")
+    rpc_url: str = os.getenv("SEPOLIA_RPC_URL", "https://rpc.sepolia.org")
     
-    # Contract addresses
-    liquidation_prevention_address: str
-    aave_adapter_address: str
-    compound_adapter_address: str
+    # Contract Addresses
+    liquidation_prevention_address: Optional[str] = os.getenv("LIQUIDATION_PREVENTION_ADDRESS")
+    aave_adapter_address: Optional[str] = os.getenv("AAVE_ADAPTER_ADDRESS")
+    compound_adapter_address: Optional[str] = os.getenv("COMPOUND_ADAPTER_ADDRESS")
+    flash_loan_rebalancer_address: Optional[str] = os.getenv("FLASH_LOAN_REBALANCER_ADDRESS")
     
-    # API keys
-    anthropic_api_key: str
+    # AI Configuration
+    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    claude_model: str = "claude-3-5-sonnet-20241022"
+    max_tokens: int = 1024
     
-    # Agent settings
-    check_interval: int = 60  # seconds between checks
-    min_health_factor: float = 1.5  # trigger rebalance below this
-    target_health_factor: float = 2.0  # target after rebalance
+    # Monitoring Configuration
+    check_interval: int = int(os.getenv("CHECK_INTERVAL", "60"))  # seconds
+    min_health_factor: float = float(os.getenv("MIN_HEALTH_FACTOR", "1.5"))
+    target_health_factor: float = float(os.getenv("TARGET_HEALTH_FACTOR", "2.0"))
     
-    # Private key for executing transactions
-    private_key: Optional[str] = None
+    # Risk Thresholds
+    critical_threshold: float = 1.15  # Immediate action required
+    warning_threshold: float = 1.3    # Monitor closely
+    safe_threshold: float = 1.5       # Healthy position
     
-    # Multi-chain support
-    supported_chains: list = None
+    # Execution Configuration
+    max_gas_price_gwei: int = 100
+    slippage_tolerance: float = 0.01  # 1%
+    
+    # Logging
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    ai_attribution_file: str = "docs/ai-attribution.jsonl"
     
     @classmethod
     def from_env(cls) -> "Config":
-        """Load configuration from environment variables"""
-        
-        network = os.getenv("NETWORK", "sepolia")
-        
-        # Network-specific RPC URLs
-        rpc_urls = {
-            "sepolia": os.getenv("SEPOLIA_RPC_URL", "https://rpc.sepolia.org"),
-            "base": os.getenv("BASE_RPC_URL", "https://mainnet.base.org"),
-            "baseSepolia": os.getenv("BASE_SEPOLIA_RPC_URL", "https://sepolia.base.org"),
-            "arbitrum": os.getenv("ARBITRUM_RPC_URL", "https://arb1.arbitrum.io/rpc"),
-            "arbitrumSepolia": os.getenv("ARBITRUM_SEPOLIA_RPC_URL", "https://sepolia-rollup.arbitrum.io/rpc"),
-        }
-        
-        chain_ids = {
-            "sepolia": 11155111,
-            "base": 8453,
-            "baseSepolia": 84532,
-            "arbitrum": 42161,
-            "arbitrumSepolia": 421614,
-        }
-        
-        return cls(
-            network=network,
-            rpc_url=rpc_urls.get(network, rpc_urls["sepolia"]),
-            chain_id=chain_ids.get(network, chain_ids["sepolia"]),
-            liquidation_prevention_address=os.getenv("LIQUIDATION_PREVENTION_ADDRESS", ""),
-            aave_adapter_address=os.getenv("AAVE_ADAPTER_ADDRESS", ""),
-            compound_adapter_address=os.getenv("COMPOUND_ADAPTER_ADDRESS", ""),
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
-            check_interval=int(os.getenv("CHECK_INTERVAL", "60")),
-            min_health_factor=float(os.getenv("MIN_HEALTH_FACTOR", "1.5")),
-            target_health_factor=float(os.getenv("TARGET_HEALTH_FACTOR", "2.0")),
-            private_key=os.getenv("PRIVATE_KEY"),
-            supported_chains=os.getenv("SUPPORTED_CHAINS", "sepolia,baseSepolia,arbitrumSepolia").split(","),
-        )
+        """Create config from environment variables"""
+        return cls()
     
     def validate(self) -> bool:
         """Validate configuration"""
-        errors = []
-        
-        if not self.rpc_url:
-            errors.append("RPC_URL not set")
-        
         if not self.anthropic_api_key:
-            errors.append("ANTHROPIC_API_KEY not set")
+            raise ValueError("ANTHROPIC_API_KEY not set")
         
         if not self.liquidation_prevention_address:
-            errors.append("LIQUIDATION_PREVENTION_ADDRESS not set")
+            raise ValueError("LIQUIDATION_PREVENTION_ADDRESS not set")
         
-        if errors:
-            print("❌ Configuration errors:")
-            for error in errors:
-                print(f"   - {error}")
-            return False
+        if self.min_health_factor <= 1.0:
+            raise ValueError("MIN_HEALTH_FACTOR must be > 1.0")
+        
+        if self.target_health_factor <= self.min_health_factor:
+            raise ValueError("TARGET_HEALTH_FACTOR must be > MIN_HEALTH_FACTOR")
         
         return True
+    
+    def get_network_rpc(self) -> str:
+        """Get RPC URL for current network"""
+        network_rpcs = {
+            "sepolia": os.getenv("SEPOLIA_RPC_URL", "https://rpc.sepolia.org"),
+            "baseSepolia": os.getenv("BASE_SEPOLIA_RPC_URL", "https://sepolia.base.org"),
+            "arbitrumSepolia": os.getenv("ARBITRUM_SEPOLIA_RPC_URL", "https://sepolia-rollup.arbitrum.io/rpc"),
+        }
+        return network_rpcs.get(self.network, self.rpc_url)

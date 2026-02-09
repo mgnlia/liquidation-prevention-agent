@@ -1,317 +1,404 @@
-# 🏆 HackMoney 2026 Submission Checklist
+# ✅ ETHDenver 2026 Submission Checklist
 
 **Project:** AI-Powered Liquidation Prevention Agent  
-**Repository:** https://github.com/mgnlia/liquidation-prevention-agent  
-**Deadline:** February 11, 2026
+**Track:** Futurllama  
+**Deadline:** February 18, 2026  
+**Repo:** https://github.com/mgnlia/liquidation-prevention-agent
 
 ---
 
-## 📋 Pre-Submission Requirements
+## 🚨 CRITICAL - Must Complete Before Submission
 
-### Environment Setup
-- [ ] Sepolia testnet ETH obtained (0.5+ ETH)
-  - Faucet 1: https://sepoliafaucet.com/
-  - Faucet 2: https://www.alchemy.com/faucets/ethereum-sepolia
-  - Faucet 3: https://faucet.quicknode.com/ethereum/sepolia
-- [ ] Alchemy/Infura Sepolia RPC URL configured
-- [ ] Deployer wallet private key secured
-- [ ] Agent wallet private key secured (separate from deployer)
-- [ ] Etherscan API key obtained
-- [ ] Anthropic Claude API key obtained
-
-### Code Verification
-- [ ] All contracts compile: `npx hardhat compile`
-- [ ] All tests pass: `npx hardhat test`
-- [ ] Agent dependencies installed: `pip install -r requirements.txt`
-- [ ] Frontend builds: `cd frontend && npm run build`
-- [ ] No console errors or warnings
-- [ ] Git history is clean (small, meaningful commits)
-
----
-
-## 🚀 Deployment Steps
-
-### 1. Deploy Smart Contracts
-- [ ] Configure `contracts/.env` with all required variables
-- [ ] Run deployment: `npx hardhat run scripts/deploy.js --network sepolia`
-- [ ] Save deployment addresses from output
-- [ ] Verify deployment was successful (4 contracts deployed)
-- [ ] Check deployer balance after deployment (should have remaining ETH)
-
-**Expected Output:**
-```
-✅ AaveV3Adapter deployed to: 0x...
-✅ CompoundV3Adapter deployed to: 0x...
-✅ FlashLoanRebalancer deployed to: 0x...
-✅ LiquidationPrevention deployed to: 0x...
-```
-
-### 2. Verify Contracts on Etherscan
-- [ ] Run verification: `npx hardhat run scripts/verify.js --network sepolia`
-- [ ] Confirm all 4 contracts show "Verified" on Etherscan
-- [ ] Check contract source code is readable on Etherscan
-- [ ] Test "Read Contract" and "Write Contract" tabs work
-
-**Verification URLs:**
-- [ ] LiquidationPrevention: https://sepolia.etherscan.io/address/0x...#code
-- [ ] AaveV3Adapter: https://sepolia.etherscan.io/address/0x...#code
-- [ ] CompoundV3Adapter: https://sepolia.etherscan.io/address/0x...#code
-- [ ] FlashLoanRebalancer: https://sepolia.etherscan.io/address/0x...#code
-
-### 3. Configure AI Agent
-- [ ] Update `agent/.env` with deployed contract addresses
-- [ ] Configure Claude API key
-- [ ] Set agent wallet private key
-- [ ] Configure RPC endpoint
-- [ ] Test agent wallet has sufficient balance (0.1+ ETH)
-
-### 4. Test Agent Functionality
-- [ ] Start agent: `python agent.py`
-- [ ] Verify agent initializes without errors
-- [ ] Check agent connects to contracts successfully
-- [ ] Confirm monitoring cycle runs (even with no users)
-- [ ] Test Claude API integration works
-
-**Expected Console Output:**
-```
-🤖 Initializing AI Liquidation Prevention Agent...
-✅ Agent initialized successfully
-🚀 LIQUIDATION PREVENTION AGENT STARTING
-💰 Agent Wallet: 0x...
-   Balance: 0.5000 ETH
-⏱️  Monitor Interval: 60s
-```
-
-### 5. Create Test Position (Optional but Recommended)
-- [ ] Visit Aave V3 Sepolia: https://app.aave.com/?marketName=proto_sepolia_v3
-- [ ] Get test tokens from faucet: https://staging.aave.com/faucet/
-- [ ] Supply collateral (e.g., 1 ETH)
-- [ ] Borrow stablecoins (e.g., 500 USDC)
-- [ ] Register position for monitoring via frontend or contract call
-- [ ] Verify agent detects and monitors position
-
----
-
-## 🎬 Demo Video Requirements
-
-### Recording Setup
-- [ ] Screen recording software ready (OBS Studio/Loom/QuickTime)
-- [ ] Microphone tested (clear audio, no background noise)
-- [ ] Recording resolution: 1080p or 720p minimum
-- [ ] Browser tabs prepared in order:
-  1. GitHub repository
-  2. Aave V3 Sepolia (showing position)
-  3. Frontend dashboard
-  4. Agent terminal
-  5. Etherscan transactions
-  6. Architecture diagram
-
-### Demo Script
-- [ ] Follow DEMO.md script structure
-- [ ] Duration: 2-4 minutes (not longer!)
-- [ ] Show problem → solution → execution → results
-- [ ] Highlight sponsor integrations (Aave, Claude, The Graph)
-- [ ] Speak clearly and at normal pace (NO speed-ups)
-- [ ] Use your own voice (NO text-to-speech)
-- [ ] Include call-to-action (GitHub repo link)
-
-### Demo Content Checklist
-- [ ] **Intro** (15s): Project name, problem statement
-- [ ] **Problem** (20s): Show at-risk position on Aave
-- [ ] **Registration** (30s): Demonstrate user registration flow
-- [ ] **AI Monitoring** (45s): Show agent terminal with Claude analysis
-- [ ] **Execution** (45s): Show Etherscan transaction and results
-- [ ] **Technical** (30s): Highlight architecture and integrations
-- [ ] **Closing** (15s): GitHub link and thank you
-
-### Video Quality Check
-- [ ] Audio is clear and understandable
-- [ ] Screen is readable (text not too small)
-- [ ] No personal information visible (private keys, emails, etc.)
-- [ ] Smooth transitions between sections
-- [ ] Professional presentation (no errors or stuttering)
-- [ ] File format: MP4 (H.264 codec recommended)
-- [ ] File size: Under 500MB
-
-### Upload & Hosting
-- [ ] Upload to YouTube (unlisted or public)
+### 1. Demo Video (REQUIRED) ⚠️
+- [ ] Record 2-4 minute video following `docs/DEMO_SCRIPT.md`
+- [ ] Upload to YouTube (unlisted is fine)
+- [ ] Add video link to README.md
 - [ ] Test video plays correctly
-- [ ] Copy video URL for submission
-- [ ] (Optional) Upload to Loom/Vimeo as backup
+
+**Options:**
+- **Option A:** Deploy to Sepolia + record live demo
+- **Option B:** Use localhost deployment (see `docs/LOCALHOST_DEMO.md`) ✅ READY NOW
+
+### 2. Devfolio Registration (REQUIRED) ⚠️
+- [ ] Go to https://ethdenver2026.devfolio.co/
+- [ ] Create account / Sign in
+- [ ] Click "Submit Project"
+- [ ] Fill in project details (see below)
+- [ ] Submit before Feb 15 deadline
+
+### 3. Contract Deployment (OPTIONAL but Recommended)
+- [ ] Deploy to Sepolia testnet
+- [ ] Verify contracts on Etherscan
+- [ ] Update README with contract addresses
+- [ ] Test agent with live contracts
 
 ---
 
-## 📝 Submission Platform
+## 📋 Devfolio Submission Details
 
-### ETHGlobal HackMoney 2026
-**URL:** https://ethglobal.com/events/hackmoney2026
+### Basic Information
 
-### Required Information
-- [ ] Project name: "AI-Powered Liquidation Prevention Agent"
-- [ ] Tagline: "Autonomous AI agent preventing DeFi liquidations using Aave flash loans and Claude API"
-- [ ] GitHub repository URL
-- [ ] Demo video URL (YouTube/Loom)
-- [ ] Live demo URL (if deployed frontend)
-- [ ] Team members listed
-- [ ] Technologies used selected
-- [ ] Sponsor prizes selected (max 3):
-  - [ ] Aave Grants DAO
-  - [ ] Anthropic
-  - [ ] The Graph
-
-### Project Description
+**Project Name:**
 ```
-An AI-powered autonomous agent that monitors DeFi positions across Aave V3 and Compound V3, 
-using Claude API for intelligent risk analysis and Aave flash loans for capital-efficient 
-rebalancing. The agent prevents liquidations before they happen by proactively executing 
-rebalancing strategies, protecting billions in user funds.
-
-Key Features:
-• Real-time position monitoring via The Graph
-• Claude-powered risk analysis and strategy generation
-• Automated flash loan rebalancing (zero capital required)
-• Support for Aave V3 and Compound V3
-• Production-ready with comprehensive tests and docs
-
-Tech Stack: Solidity, Hardhat, OpenZeppelin, Python, LangGraph, Claude API, The Graph, React
+AI-Powered Liquidation Prevention Agent
 ```
 
-### Deployed Contracts (Sepolia)
-- [ ] LiquidationPrevention: 0x...
-- [ ] AaveV3Adapter: 0x...
-- [ ] CompoundV3Adapter: 0x...
-- [ ] FlashLoanRebalancer: 0x...
+**Tagline (max 100 chars):**
+```
+Autonomous AI agent preventing DeFi liquidations using Claude AI and flash loans
+```
 
-### Links to Include
-- [ ] GitHub: https://github.com/mgnlia/liquidation-prevention-agent
-- [ ] Etherscan (main contract): https://sepolia.etherscan.io/address/0x...
-- [ ] Demo video: [YouTube URL]
-- [ ] Live demo: [Frontend URL if deployed]
-- [ ] Documentation: Link to README.md
+**Track:**
+```
+Futurllama (AI + Crypto + DePIN)
+```
+
+### Description
+
+**Short Description (max 500 chars):**
+```
+An AI agent that monitors DeFi positions across Aave and Compound, uses Claude AI for risk analysis, and executes flash loan rebalancing to prevent liquidations. Features multi-chain support, transparent AI attribution, and production-ready code.
+```
+
+**Full Description:**
+```
+## The Problem
+DeFi users lose millions annually to liquidations because they can't monitor positions 24/7. Market volatility can push positions into liquidation territory within hours.
+
+## Our Solution
+An autonomous AI-powered agent that:
+1. Monitors positions across Aave V3 and Compound V3 in real-time
+2. Uses Claude AI (Anthropic) for intelligent risk analysis
+3. Executes flash loan-based rebalancing before liquidation occurs
+4. Supports multi-chain deployment (Ethereum, Base, Arbitrum)
+
+## Technical Implementation
+- **Smart Contracts:** Solidity 0.8.20 with OpenZeppelin, integrating Aave V3 flash loans
+- **AI Agent:** Python with Anthropic Claude API and LangGraph for autonomous decision-making
+- **Architecture:** Modular design with protocol adapters for easy extension
+- **Testing:** Comprehensive test suite with Hardhat and pytest
+- **Multi-Chain:** Configured for Sepolia, Base Sepolia, and Arbitrum Sepolia
+
+## Key Features
+✅ Real-time position monitoring
+✅ Claude AI decision-making with full attribution logging
+✅ Gas-efficient flash loan rebalancing
+✅ User-configurable risk thresholds
+✅ Multi-protocol support (extensible architecture)
+✅ Production-ready with full documentation
+
+## Futurllama Track Alignment
+- **Autonomous AI Agents:** Fully autonomous monitoring → analysis → execution loop
+- **Crypto Integration:** Deep integration with DeFi protocols (Aave, Compound)
+- **Transparency:** All AI decisions logged with reasoning for auditability
+- **Multi-Chain:** Cross-chain position monitoring and execution
+
+## Impact
+Prevents liquidations that cost users 10-15% of collateral, saving potentially millions in user funds while demonstrating practical AI applications in DeFi.
+```
+
+### Links
+
+**GitHub Repository:**
+```
+https://github.com/mgnlia/liquidation-prevention-agent
+```
+
+**Demo Video:**
+```
+[INSERT YOUTUBE LINK AFTER RECORDING]
+```
+
+**Live Demo (if deployed):**
+```
+[INSERT FRONTEND URL IF DEPLOYED]
+or
+Localhost demo - see docs/LOCALHOST_DEMO.md
+```
+
+### Technologies Used
+
+Select/Add these tags:
+- Solidity
+- Hardhat
+- OpenZeppelin
+- Python
+- Anthropic Claude
+- AI/ML
+- DeFi
+- Aave
+- Flash Loans
+- Web3.py
+- The Graph
+- React
+- Multi-Chain
+
+### Team Information
+
+**Team Name:**
+```
+AI Office
+```
+
+**Team Members:**
+```
+[Add team member names and roles]
+- Developer: [Name]
+- AI/ML Engineer: [Name]
+- Designer: [Name]
+```
+
+### Additional Info
+
+**What did you learn?**
+```
+- Integrating LLM decision-making into financial applications
+- Aave V3 flash loan mechanics and optimization
+- Multi-chain contract deployment strategies
+- Balancing automation with user control in DeFi
+- AI attribution and transparency requirements
+```
+
+**Challenges faced:**
+```
+- Designing reliable AI decision-making for financial operations
+- Optimizing gas costs for flash loan rebalancing
+- Handling edge cases in health factor calculations
+- Multi-protocol position tracking complexity
+```
+
+**What's next?**
+```
+- Mainnet deployment with security audit
+- Support for additional protocols (Maker, Morpho, Compound V2)
+- Cross-chain rebalancing with bridge integration
+- Mobile app with push notifications
+- DAO governance for parameter tuning
+- Insurance fund for failed rebalances
+```
 
 ---
 
-## 🎯 Sponsor Prize Requirements
+## 📁 Repository Checklist
 
-### Aave Grants DAO
-- [ ] Uses Aave V3 flash loans
-- [ ] Implements IPool interface
-- [ ] Monitors health factors
-- [ ] Novel use case (prevention vs liquidation)
-- [ ] Production-ready code
-- [ ] Comprehensive documentation
+Ensure these files are present and up-to-date:
 
-### Anthropic
-- [ ] Integrates Claude API
-- [ ] Demonstrates autonomous reasoning
-- [ ] Complex decision-making (multi-factor analysis)
-- [ ] Clear AI attribution in docs/AI_ATTRIBUTION.md
-- [ ] Showcases Claude's capabilities
+### Root Files
+- [x] README.md (comprehensive with architecture diagram)
+- [x] LICENSE (MIT)
+- [x] .gitignore (no secrets committed)
+- [x] .env.example (template for configuration)
+- [x] package.json (all dependencies listed)
+- [x] hardhat.config.js (multi-chain configured)
 
-### The Graph
-- [ ] Deploys subgraph for position indexing
-- [ ] Uses GraphQL queries for data fetching
-- [ ] Event-driven architecture
-- [ ] Efficient on-chain data access
-- [ ] Documentation of subgraph usage
+### Contracts
+- [x] contracts/LiquidationPrevention.sol
+- [x] contracts/AaveAdapter.sol
+- [x] contracts/CompoundAdapter.sol
+- [x] contracts/FlashLoanRebalancer.sol
+- [x] contracts/interfaces/*.sol
 
----
+### AI Agent
+- [x] agent/main.py (Claude integration)
+- [x] agent/monitor.py
+- [x] agent/analyzer.py
+- [x] agent/executor.py
+- [x] agent/config.py
+- [x] agent/requirements.txt
 
-## ✅ Final Checks
+### Scripts
+- [x] scripts/deploy.js
+- [x] scripts/verify.js (if created)
 
-### GitHub Repository
-- [ ] README.md is comprehensive and clear
-- [ ] All code is pushed to main branch
-- [ ] No sensitive data in repo (keys, passwords)
-- [ ] LICENSE file included (MIT)
-- [ ] .gitignore properly configured
-- [ ] Clean commit history (meaningful messages)
-- [ ] All links in README work
-- [ ] Badges added (if applicable)
+### Tests
+- [x] test/LiquidationPrevention.test.js
+- [x] agent/tests/test_monitor.py
 
 ### Documentation
-- [ ] DEPLOYMENT.md complete
-- [ ] DEMO.md script ready
-- [ ] QUICKSTART.md tested
-- [ ] AI_ATTRIBUTION.md filled out
-- [ ] ARCHITECTURE.md explains design
-- [ ] All docs have correct links
+- [x] docs/DEMO_SCRIPT.md
+- [x] docs/DEPLOYMENT_GUIDE.md
+- [x] docs/LOCALHOST_DEMO.md
+- [x] docs/ai-attribution.jsonl (for logging)
+
+### Frontend (if applicable)
+- [ ] frontend/src/*
+- [ ] frontend/package.json
+- [ ] frontend/README.md
+
+---
+
+## 🎥 Demo Video Requirements
+
+### Technical Requirements
+- **Duration:** 2-4 minutes (strict)
+- **Resolution:** 720p minimum, 1080p recommended
+- **Format:** MP4, MOV, or any YouTube-supported format
+- **Audio:** Clear narration, no background music needed
+- **Captions:** Optional but recommended
+
+### Content Requirements
+Must show:
+1. ✅ Project introduction and problem statement
+2. ✅ Architecture overview
+3. ✅ Live demo or code walkthrough
+4. ✅ AI integration (Claude API)
+5. ✅ Smart contract functionality
+6. ✅ Key technical innovations
+
+### Recording Options
+
+**Option 1: Live Demo (Best)**
+- Deploy to Sepolia
+- Show real transactions
+- Demonstrate agent monitoring
+- Show Claude's reasoning
+
+**Option 2: Localhost Demo (Acceptable)**
+- Use local Hardhat network
+- Show contract deployment
+- Walk through code
+- Explain architecture
+
+**Option 3: Slides + Code (Acceptable)**
+- Professional slides
+- Code snippets
+- Architecture diagrams
+- Clear narration
+
+---
+
+## 🔍 Quality Checklist
 
 ### Code Quality
-- [ ] No console.log or debug statements
-- [ ] Code is commented where necessary
-- [ ] Error handling implemented
-- [ ] Input validation on all functions
-- [ ] Gas optimization considered
-- [ ] Security best practices followed
+- [x] All contracts compile without warnings
+- [x] No hardcoded addresses (use config)
+- [x] Comments on complex logic
+- [x] Consistent code style
+- [x] Error handling implemented
+- [x] Security best practices followed
 
-### Testing
-- [ ] Unit tests for smart contracts
-- [ ] Integration tests for agent
-- [ ] All tests pass
-- [ ] Test coverage documented
-- [ ] Edge cases handled
+### Documentation Quality
+- [x] README explains project clearly
+- [x] Setup instructions are complete
+- [x] Architecture is documented
+- [x] API/function documentation present
+- [x] Demo script is detailed
 
----
-
-## 🚨 Common Pitfalls to Avoid
-
-- [ ] ❌ Don't submit with unverified contracts
-- [ ] ❌ Don't use text-to-speech in demo video
-- [ ] ❌ Don't speed up demo video excessively
-- [ ] ❌ Don't exceed 4-minute video length
-- [ ] ❌ Don't include private keys in screenshots
-- [ ] ❌ Don't submit without testing deployment
-- [ ] ❌ Don't forget to select sponsor prizes
-- [ ] ❌ Don't use Lorem Ipsum or placeholder text
-- [ ] ❌ Don't submit with broken links
-- [ ] ❌ Don't skip the demo video
-
----
-
-## 📊 Submission Metrics
-
-### Target Metrics to Highlight
-- **Response Time:** <60s from risk detection to execution
-- **Gas Efficiency:** ~300k gas per rebalancing transaction
-- **Uptime:** 24/7 autonomous monitoring
-- **Accuracy:** Tested against historical liquidation data
-- **Coverage:** Aave V3 + Compound V3 (expandable)
-
-### Innovation Points
-- First AI agent using flash loans for liquidation prevention
-- Autonomous decision-making with Claude API
-- Zero capital required for rebalancing
-- Production-ready with comprehensive tests
-- Modular architecture for protocol expansion
-
----
-
-## 🎉 Post-Submission
-
-- [ ] Confirm submission received (check email)
-- [ ] Share on Twitter with #HackMoney2026
-- [ ] Post in ETHGlobal Discord
-- [ ] Monitor submission status
-- [ ] Prepare for potential judging Q&A
-- [ ] Keep agent running for live demos
-
----
-
-## 📞 Support Contacts
-
-**ETHGlobal Support:** support@ethglobal.com  
-**Discord:** ETHGlobal Discord #hackmoney-2026  
-**Documentation:** https://ethglobal.com/help
+### Submission Quality
+- [ ] Demo video is professional
+- [ ] No typos in submission
+- [ ] All links work
+- [ ] GitHub repo is public
+- [ ] Code is well-organized
 
 ---
 
 ## ⏰ Timeline
 
-**Target Submission:** February 10, 2026 (1 day before deadline)  
-**Deadline:** February 11, 2026 23:59 UTC  
-**Results:** February 15-18, 2026 (estimated)
+**Today (Feb 9):**
+- [x] Code complete
+- [x] Documentation complete
+- [ ] Record demo video ⚠️
+- [ ] Upload to YouTube
+
+**Feb 10-14:**
+- [ ] Register on Devfolio
+- [ ] Deploy to Sepolia (optional)
+- [ ] Final testing
+- [ ] Polish demo video
+
+**Feb 15 (Devfolio Deadline):**
+- [ ] Submit project on Devfolio
+- [ ] Verify submission received
+
+**Feb 18 (ETHDenver Deadline):**
+- [ ] Final submission
+- [ ] Prepare for judging
 
 ---
 
-**GOOD LUCK! 🍀 LET'S WIN THIS! 🏆**
+## 🆘 If You're Stuck
+
+### Can't deploy to testnet?
+→ Use localhost demo (see `docs/LOCALHOST_DEMO.md`)
+→ Judges accept this for hackathons
+
+### Can't record video?
+→ Use Loom (free screen recording)
+→ Or QuickTime on Mac
+→ Or OBS Studio (free, all platforms)
+
+### Can't access Devfolio?
+→ Ask teammate to register
+→ Or contact ETHDenver support
+
+### Need Sepolia ETH?
+→ https://sepoliafaucet.com/
+→ https://faucet.quicknode.com/ethereum/sepolia
+
+### Need Claude API key?
+→ https://console.anthropic.com/
+→ Free tier available
+
+---
+
+## 📞 Support
+
+**GitHub Issues:**
+https://github.com/mgnlia/liquidation-prevention-agent/issues
+
+**ETHDenver Discord:**
+[Find link on ETHDenver website]
+
+**Devfolio Support:**
+support@devfolio.co
+
+---
+
+## 🏆 Winning Criteria (Futurllama Track)
+
+Based on typical hackathon judging:
+
+1. **Innovation (30%)**
+   - ✅ Novel use of AI in DeFi
+   - ✅ Autonomous agent architecture
+   - ✅ Flash loan optimization
+
+2. **Technical Implementation (30%)**
+   - ✅ Clean, working code
+   - ✅ Multi-chain support
+   - ✅ Comprehensive testing
+
+3. **Impact & Usefulness (20%)**
+   - ✅ Solves real problem (liquidations)
+   - ✅ Production-ready design
+   - ✅ Clear value proposition
+
+4. **Presentation (20%)**
+   - ⚠️ Demo video quality
+   - ✅ Documentation clarity
+   - ✅ Code organization
+
+**We're strong in 3/4 categories. Focus on the demo video!**
+
+---
+
+## ✅ Final Pre-Submission Check
+
+Right before submitting, verify:
+
+- [ ] Demo video uploaded and link works
+- [ ] GitHub repo is public
+- [ ] README has video link
+- [ ] All code is pushed to GitHub
+- [ ] No API keys or secrets in code
+- [ ] Devfolio form completely filled
+- [ ] Project name matches everywhere
+- [ ] Team member info is correct
+- [ ] All links are clickable and work
+
+---
+
+**You've got this! The hard part (code) is done. Now just record and submit! 🚀**
+
+Need help? Check `docs/LOCALHOST_DEMO.md` for the fastest path to a working demo.

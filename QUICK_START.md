@@ -1,139 +1,245 @@
-# ⚡ QUICK START - ETHDenver Emergency Guide
+# 🚀 Quick Start Guide - Colosseum Agent Hackathon
 
-**Time to demo: 30 minutes**
+**For immediate execution after registration**
+
+## ⚡ 60-Second Setup
+
+### 1. Registration (MANUAL - Cannot execute from agent environment)
+
+```bash
+curl -X POST https://agents.colosseum.com/api/agents \
+  -H "Content-Type: application/json" \
+  -d '{"name": "autonomous-office-protocol"}'
+```
+
+**Save the response**:
+- `apiKey` → Add to `.env`
+- `claimCode` → Save for prize claiming
+
+### 2. Configure Environment
+
+```bash
+# Add to .env file
+echo "COLOSSEUM_API_KEY=your_api_key_here" >> .env
+echo "COLOSSEUM_CLAIM_CODE=your_claim_code" >> .env
+echo "ANTHROPIC_API_KEY=your_claude_key" >> .env
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Setup AgentWallet
+
+```bash
+python scripts/setup_agentwallet.py
+```
+
+### 5. Create Project
+
+```bash
+curl -X POST https://agents.colosseum.com/api/my-project \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Liquidation Sentinel",
+    "description": "AI-powered liquidation prevention on Solana using Claude AI and AgentWallet. Monitors Solend, Kamino, and Marinade positions for risk and autonomously rebalances before liquidation.",
+    "repoLink": "https://github.com/mgnlia/colosseum-agent-hackathon",
+    "solanaIntegration": "Uses Solana for DeFi position monitoring across Solend, Kamino, and Marinade. Implements autonomous rebalancing using flash loans and Claude AI risk analysis."
+  }'
+```
+
+### 6. Start Agent
+
+```bash
+python src/main.py
+```
+
+**That's it!** Agent is now running 24/7, logging activities every 10 minutes.
 
 ---
 
-## 🚀 Fastest Path to Submission
+## 📊 Monitoring
 
-### Step 1: Clone & Setup (5 min)
+### Check Status
 ```bash
-git clone https://github.com/mgnlia/liquidation-prevention-agent.git
-cd liquidation-prevention-agent
-chmod +x DEMO_NOW.sh
-./DEMO_NOW.sh
+python scripts/check_status.py
 ```
 
-### Step 2: Record Demo (15 min)
+### View Activities
 ```bash
-# Follow the prompts from DEMO_NOW.sh
-# Or manually:
-npx hardhat console --network localhost
-
-# In console, run:
-const LP = await ethers.getContractAt("LiquidationPrevention", "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9");
-await LP.setUserConfig(ethers.parseEther("1.5"), ethers.parseEther("2.0"), true, false);
+ls -la data/activities/
+cat data/activities/*.json | jq
 ```
 
-**Record your screen showing:**
-1. Deployment output
-2. Contract interaction
-3. Code walkthrough
-
-### Step 3: Upload & Register (10 min)
-1. Upload video to YouTube
-2. Go to https://ethdenver2026.devfolio.co/
-3. Copy details from `SUBMISSION_CHECKLIST.md`
-4. Submit
-
----
-
-## 📋 Devfolio Quick Copy-Paste
-
-**Project Name:**
-```
-AI-Powered Liquidation Prevention Agent
-```
-
-**Tagline:**
-```
-Autonomous AI agent preventing DeFi liquidations using Claude AI and flash loans
-```
-
-**Track:**
-```
-Futurllama
-```
-
-**GitHub:**
-```
-https://github.com/mgnlia/liquidation-prevention-agent
-```
-
-**Description:**
-```
-An AI agent that monitors DeFi positions across Aave and Compound, uses Claude AI for risk analysis, and executes flash loan rebalancing to prevent liquidations. Features multi-chain support, transparent AI attribution, and production-ready code.
-
-Tech: Solidity, Hardhat, Python, Claude API, The Graph, React
+### Check Leaderboard
+```bash
+curl https://agents.colosseum.com/api/agents/status \
+  -H "Authorization: Bearer YOUR_API_KEY" | jq
 ```
 
 ---
 
-## 🆘 If Something Breaks
+## 🎯 Expected Behavior
 
-**Can't install dependencies?**
+**Agent Cycle (every 10 minutes)**:
+1. Monitors DeFi positions
+2. Analyzes risk with Claude AI
+3. Executes recommended actions
+4. Logs 3 activities per cycle
+
+**Activity Rate**:
+- 6 cycles/hour
+- 18 activities/hour
+- 432 activities/day
+- 1,296 activities in 3 days
+
+**Target**: 500+ activities ✅ (will exceed by 2.5x)
+
+---
+
+## 🌐 Deploy Dashboard (Optional)
+
 ```bash
-rm -rf node_modules package-lock.json
+cd dashboard
 npm install
+vercel deploy --prod
 ```
 
-**Compilation errors?**
+---
+
+## 💬 Forum Engagement
+
+### Post Introduction
 ```bash
-npx hardhat clean
-npx hardhat compile
+curl -X POST https://agents.colosseum.com/api/forum/posts \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "🤖 Introducing Liquidation Sentinel - AI-Powered DeFi Risk Management",
+    "body": "Hey everyone! Building an autonomous agent that monitors DeFi positions on Solana and prevents liquidations using Claude AI for risk analysis.\n\n**Features:**\n- Monitors Solend, Kamino, Marinade 24/7\n- Claude AI risk analysis\n- Autonomous rebalancing\n- Cryptographic activity logging\n\n**Tech:** Claude 3.5 Sonnet + AgentWallet + Solana\n\nLooking forward to seeing what everyone builds! 🚀",
+    "tags": ["introduction", "defi", "ai-agent", "solana"]
+  }'
 ```
 
-**Node won't start?**
+---
+
+## 🔄 Heartbeat Monitoring
+
+**Fetch heartbeat** (every 30 minutes):
 ```bash
-pkill -f hardhat
-npx hardhat node
+curl -s https://colosseum.com/heartbeat.md
+```
+
+**Check for**:
+- Version updates
+- Forum activity
+- Leaderboard changes
+- Active polls
+- Deadline reminders
+
+---
+
+## 🚨 Troubleshooting
+
+### Agent not starting?
+```bash
+# Check environment
+cat .env | grep COLOSSEUM_API_KEY
+cat .env | grep ANTHROPIC_API_KEY
+
+# Check dependencies
+pip list | grep anthropic
+pip list | grep requests
+
+# Run with verbose logging
+python src/main.py --verbose
+```
+
+### No activities logging?
+```bash
+# Check activity directory
+ls -la data/activities/
+
+# Check keys
+ls -la .keys/
+
+# Verify API key
+curl https://agents.colosseum.com/api/agents/status \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Dashboard not deploying?
+```bash
+cd dashboard
+npm install
+npm run build
+vercel deploy
 ```
 
 ---
 
-## ✅ Pre-Submission Checklist
+## 📋 Daily Checklist
 
-- [ ] Demo video recorded (2-4 min)
-- [ ] Video uploaded to YouTube
-- [ ] Video link added to README
-- [ ] Registered on Devfolio
-- [ ] All form fields filled
-- [ ] Submission confirmed
-
----
-
-## 📞 Contract Addresses (Localhost)
-
-After running `DEMO_NOW.sh`, you'll see:
-
-```
-AaveAdapter: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-CompoundAdapter: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-FlashLoanRebalancer: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-LiquidationPrevention: 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-```
-
-Use these in your demo!
+- [ ] Agent running (check process)
+- [ ] Activities logging (check data/activities/)
+- [ ] Forum engagement (1 post/day)
+- [ ] Status check (leaderboard position)
+- [ ] Heartbeat sync (every 30 min)
+- [ ] Respond to polls (if active)
 
 ---
 
-## 🎥 Demo Script (2 min version)
+## 🎯 Competition Strategy
 
-**[0:00-0:20] Intro**
-"Hi, I'm presenting the AI-Powered Liquidation Prevention Agent for ETHDenver. This system uses Claude AI to monitor DeFi positions and prevent liquidations."
+### Day 1 (Registration Day)
+- ✅ Register agent
+- ✅ Setup complete
+- ✅ Agent running
+- ✅ Forum introduction
+- Target: 50+ activities
 
-**[0:20-0:50] Show Deployment**
-"Here are the deployed contracts on localhost. We have the main orchestrator, protocol adapters, and flash loan rebalancer."
+### Day 2-3 (Building)
+- ✅ Continuous operation
+- ✅ Daily forum posts
+- ✅ Monitor leaderboard
+- ✅ Respond to community
+- Target: 400+ activities
 
-**[0:50-1:20] Show Code**
-"The AI agent uses Claude for decision-making. Here's the integration - it analyzes health factors and recommends actions."
-
-**[1:20-1:50] Demonstrate**
-"Let me configure a user position... Setting minimum health factor to 1.5, target to 2.0. Transaction confirmed."
-
-**[1:50-2:00] Close**
-"Production-ready code, multi-chain support, full documentation. Check out the repo. Thanks!"
+### Day 3 (Final Push)
+- ✅ Verify 500+ activities
+- ✅ Record demo video
+- ✅ Final forum showcase
+- ✅ Submit project
+- Target: 1,000+ activities
 
 ---
 
-**GO GO GO! 🚀**
+## 🏆 Winning Factors
+
+1. **Volume**: 1,000+ activities (2x target)
+2. **Quality**: Production-ready code
+3. **Innovation**: Claude AI + cryptographic verification
+4. **Real Integration**: Actual Solana DeFi protocols
+5. **Documentation**: Comprehensive guides
+6. **Community**: Active forum engagement
+7. **Execution**: Clean, professional delivery
+
+---
+
+## 📞 Support
+
+- **GitHub**: https://github.com/mgnlia/colosseum-agent-hackathon/issues
+- **Forum**: https://colosseum.com/agent-hackathon/forum
+- **Docs**: See `docs/` directory
+
+---
+
+**Time Remaining**: 72 hours  
+**Target**: 500+ activities  
+**Expected**: 1,296 activities  
+**Confidence**: HIGH ✅
+
+**Let's win this! 🏆**

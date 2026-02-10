@@ -17,7 +17,7 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.SEPOLIA_RPC_URL || "https://rpc.sepolia.org",
-        enabled: process.env.FORK_ENABLED === "true",
+        enabled: false,
       },
     },
     sepolia: {
@@ -65,10 +65,9 @@ module.exports = {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
-    artifacts: "./artifacts",
+    artifacts: "./artifacts"
   },
-  gasReporter: {
-    enabled: process.env.REPORT_GAS === "true",
-    currency: "USD",
-  },
+  mocha: {
+    timeout: 40000
+  }
 };

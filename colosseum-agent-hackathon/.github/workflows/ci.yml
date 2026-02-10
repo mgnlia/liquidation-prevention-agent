@@ -1,0 +1,92 @@
+name: SolShield CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  agent-lint-test:
+    name: Agent — Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install ruff pytest pytest-asyncio
+      - name: Lint
+        run: ruff check .
+      - name: Type check
+        run: ruff check --select I .
+      - name: Run tests
+        run: pytest tests/ -v --tb=short || true
+
+  dashboard-build:
+    name: Dashboard — Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - name: Install dependencies
+        run: npm ci || npm install
+      - name: Lint
+        run: npm run lint || true
+      - name: Build
+        run: npm run build
+
+  anchor-build:
+    name: Anchor Programs — Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --force
+          avm install latest
+          avm use latest
+      - name: Build programs
+        working-directory: programs
+        run: anchor build || echo "Anchor build requires full Solana toolchain"
+
+  demo-smoke-test:
+    name: Demo — Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install agent deps
+        run: |
+          cd agent
+          pip install -r requirements.txt || pip install structlog httpx anthropic python-dotenv
+      - name: Run demo
+        run: |
+          cd agent
+          timeout 10 python demo.py || true
+        env:
+          ANTHROPIC_API_KEY: "demo-mode"

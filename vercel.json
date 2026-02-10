@@ -1,7 +1,15 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"]
+  "version": 2,
+  "builds": [
+    {
+      "src": "liquidation-frontend/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "liquidation-frontend/$1"
+    }
+  ]
 }

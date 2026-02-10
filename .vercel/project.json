@@ -1,0 +1,11 @@
+{
+  "projectId": "liquidation-prevention-agent",
+  "orgId": "team_liquidation_prevention",
+  "settings": {
+    "framework": "nextjs",
+    "rootDirectory": "liquidation-frontend",
+    "buildCommand": "npm run build",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install"
+  }
+}

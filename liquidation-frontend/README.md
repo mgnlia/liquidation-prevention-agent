@@ -1,58 +1,62 @@
 # AI Liquidation Prevention Agent - Frontend
 
-Real-time DeFi position monitoring dashboard with AI-powered rebalancing recommendations.
+## 🚀 Quick Deploy to Vercel
 
-## Features
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mgnlia/liquidation-prevention-agent&project-name=liquidation-prevention-agent&root-directory=liquidation-frontend)
 
-- 🔍 Real-time position monitoring across Aave V3 and Compound V3
-- 🤖 AI-powered rebalancing recommendations using Claude API
-- ⚡ Flash loan-based capital-efficient rebalancing
-- 📊 Health factor tracking and visualization
-- 🔔 Proactive liquidation warnings
+## Local Development
 
-## Tech Stack
-
-- **Next.js 14** - React framework
-- **RainbowKit** - Wallet connection
-- **Wagmi** - Ethereum interactions
-- **Recharts** - Data visualization
-- **Tailwind CSS** - Styling
-
-## Getting Started
-
-1. Install dependencies:
 ```bash
 npm install
-```
-
-2. Set up environment variables:
-```bash
-cp .env.example .env.local
-# Add your WalletConnect Project ID and other keys
-```
-
-3. Run development server:
-```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000)
 
-## Deployment
+## Manual Vercel Deployment
 
-Deploy to Vercel:
 ```bash
-npx vercel --prod
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy from this directory
+vercel --prod
 ```
 
-## HackMoney 2026
+## Environment Variables
 
-This project is built for ETHGlobal HackMoney 2026, demonstrating:
-- Integration with Aave V3 and Compound V3 protocols
-- AI-powered DeFi risk management
-- Flash loan optimization
-- Real-time on-chain data indexing via The Graph
+No environment variables required for demo mode. The app will work with Sepolia testnet by default.
 
-## License
+## Features
 
-MIT
+- 🔌 **RainbowKit Wallet Connect** - Connect with MetaMask, WalletConnect, Coinbase Wallet
+- 📊 **Real-Time Health Factor Monitoring** - Track Aave V3 and Compound V3 positions
+- 🤖 **AI Analysis Dashboard** - See Claude AI recommendations
+- ⚡ **Flash Loan Rebalancing** - Execute automated position rebalancing
+- 📈 **Historical Charts** - View health factor trends over time
+
+## Tech Stack
+
+- **Next.js 14** - React framework with App Router
+- **RainbowKit** - Wallet connection UI
+- **wagmi** - React hooks for Ethereum
+- **viem** - TypeScript Ethereum library
+- **Tailwind CSS** - Styling
+- **Recharts** - Data visualization
+- **Lucide Icons** - Icon library
+
+## Contract Addresses (Sepolia Testnet)
+
+The dashboard connects to deployed contracts on Sepolia:
+- LiquidationPrevention: `0x...` (auto-detected)
+- AaveAdapter: `0x...` (auto-detected)
+- CompoundAdapter: `0x...` (auto-detected)
+
+## Demo Mode
+
+The dashboard works in demo mode even without connected wallet, showing:
+- Sample health factors
+- Mock rebalancing history
+- AI analysis examples
+
+Perfect for hackathon judging and presentations!
